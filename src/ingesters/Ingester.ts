@@ -53,6 +53,10 @@ export default abstract class Ingester {
             }
         }
 
+        // todo, add skolemization to kill blank nodes
+        // idea: just replace value of blank nodes to something unique
+        // keeping em blank
+
         return new RDFObject(id, data);
     }
 }
