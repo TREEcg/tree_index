@@ -2,6 +2,7 @@ import factory = require("@rdfjs/data-model");
 import N3 = require("n3");
 
 import { NamedNode, Quad } from "rdf-js";
+import BucketStorage from "../buckets/BucketStorage";
 import RDFObject from "../entities/RDFObject";
 import StateStorage from "../state/StateStorage";
 import { URI } from "../util/constants";
@@ -12,11 +13,18 @@ export default class EventStreamIngester extends Ingester {
     // triple storage
 
     protected stateStorage: StateStorage;
+    protected bucketStorage: BucketStorage;
     protected frequency: number;
 
-    constructor(stateStorage: StateStorage, frequency: number, source: URI) {
+    constructor(
+        stateStorage: StateStorage,
+        bucketStorage: BucketStorage,
+        frequency: number,
+        source: URI,
+    ) {
         super(source);
         this.stateStorage = stateStorage;
+        this.bucketStorage = bucketStorage;
         this.frequency = frequency;
 
         if (!this.getCurrentPage()) {
@@ -59,7 +67,8 @@ export default class EventStreamIngester extends Ingester {
     }
 
     public processObject(object: RDFObject) {
-        // send to bucket storage
+        this.bucketStorage.addObject(object);
+        // this.tripleStorage...
     }
 
     protected async tick() {
