@@ -4,31 +4,28 @@ import Bucket from "./Bucket";
 import { BucketKind } from "./BucketKind";
 import BucketStrategy from "./BucketStrategy";
 
-export default class SuffixBucketStrategy extends BucketStrategy {
-    // protected maxLength: number | undefined;
+export default class IdentityBucketStrategy extends BucketStrategy {
+    protected minLength: number;
+    protected maxLength: number;
 
-    constructor(shaclPath: URI[], maxLength?: number) {
+    constructor(shaclPath: URI[], minLength: number, maxLength: number) {
         super(shaclPath);
-        // this.maxLength = maxLength;
+        this.minLength = minLength;
+        this.maxLength = maxLength;
     }
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
         const value = this.selectValue(object);
-
         if (value) {
-            for (let i = 0; i < value.length; i++) {
-                const suffix = value.substring(i);
-                result.push(this.getBucket(suffix));
-            }
+            result.push(this.getBucket(value));
         }
-
         return result;
     }
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(BucketKind.SUFFIX, this.shaclPath, `suffix_${this.shaclPath}_${value}`);
+            const bucket = new Bucket(BucketKind.IDENTITY, this.shaclPath, `id_${this.shaclPath}_${value}`);
             this.buckets.set(value, bucket);
         }
 

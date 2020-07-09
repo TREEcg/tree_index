@@ -4,4 +4,5 @@ export enum BucketKind {
     NGRAM,
     TIME_INTERVAL,
     XYZ_TILE,
+    IDENTITY,
 }

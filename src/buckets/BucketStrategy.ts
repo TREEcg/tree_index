@@ -17,7 +17,7 @@ export default abstract class BucketStrategy {
         // assumes the final property is enough to find the correct value
         const property = this.shaclPath[this.shaclPath.length - 1];
         const matches = object.data.filter((q) => q.predicate.value === property);
-        if (matches) {
+        if (matches.length) {
             return matches[0].object.value;
         }
     }

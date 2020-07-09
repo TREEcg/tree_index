@@ -4,12 +4,12 @@ import Bucket from "./Bucket";
 import { BucketKind } from "./BucketKind";
 import BucketStrategy from "./BucketStrategy";
 
-export default class SuffixBucketStrategy extends BucketStrategy {
-    // protected maxLength: number | undefined;
+export default class TimeIntervalBucketStrategy extends BucketStrategy {
+    protected interval: number;
 
-    constructor(shaclPath: URI[], maxLength?: number) {
+    constructor(shaclPath: URI[], interval: number) {
         super(shaclPath);
-        // this.maxLength = maxLength;
+        this.interval = interval;
     }
 
     public labelObject(object: RDFObject): Bucket[] {
@@ -17,10 +17,9 @@ export default class SuffixBucketStrategy extends BucketStrategy {
         const value = this.selectValue(object);
 
         if (value) {
-            for (let i = 0; i < value.length; i++) {
-                const suffix = value.substring(i);
-                result.push(this.getBucket(suffix));
-            }
+            const date = new Date(value);
+            const bucketTimestamp = date.getTime() - (date.getTime() % this.interval);
+            result.push(this.getBucket(bucketTimestamp.toString()));
         }
 
         return result;
@@ -28,7 +27,7 @@ export default class SuffixBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(BucketKind.SUFFIX, this.shaclPath, `suffix_${this.shaclPath}_${value}`);
+            const bucket = new Bucket(BucketKind.TIME_INTERVAL, this.shaclPath, `interval_${this.interval}_${this.shaclPath}_${value}`);
             this.buckets.set(value, bucket);
         }
 

@@ -28,7 +28,7 @@ export default class PrefixBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(BucketKind.PREFIX, this.shaclPath, value);
+            const bucket = new Bucket(BucketKind.PREFIX, this.shaclPath, `prefix_${this.shaclPath}_${value}`);
             this.buckets.set(value, bucket);
         }
 
