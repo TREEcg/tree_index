@@ -7,8 +7,8 @@ import BucketStrategy from "./BucketStrategy";
 export default class PrefixBucketStrategy extends BucketStrategy {
     // protected maxLength: number | undefined;
 
-    constructor(shaclPath: URI[], maxLength?: number) {
-        super(shaclPath);
+    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], maxLength?: number) {
+        super(streamID, fragmentName, shaclPath);
         // this.maxLength = maxLength;
     }
 
@@ -28,7 +28,7 @@ export default class PrefixBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(FragmentKind.PREFIX, `prefix_${this.shaclPath}_${value}`, value);
+            const bucket = new Bucket(this.streamID, this.fragmentName, value);
             this.buckets.set(value, bucket);
         }
 

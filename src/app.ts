@@ -3,9 +3,11 @@
 import DummyStageStorage from "./state/DummyStateStorage";
 
 import EventStream from "./entities/EventStream";
+import Fragment from "./entities/Fragment";
 import Fragmentation from "./entities/Fragmentation";
 import FragmentKind from "./entities/FragmentKind";
 import CassandraFragmentationStorage from "./persistence/fragmentations/CassandraFragmentationStorage";
+import CassandraFragmentStorage from "./persistence/fragments/CassandraFragmentStorage";
 import CassandraEventStreamStorage from "./persistence/streams/CassandraEventStreamStorage";
 
 const state = new DummyStageStorage("AA");
@@ -47,9 +49,30 @@ async function testFragmentation() {
     console.log(await fs.getByName("https://streams.datapiloten.be/sensors", "tile"));
 }
 
+async function testFragment() {
+    const fs = new CassandraFragmentStorage(client);
+
+    const fragment1 = new Fragment(
+        "https://streams.datapiloten.be/sensors",
+        "tile",
+        "13_1_2",
+    );
+    const fragment2 = new Fragment(
+        "https://streams.datapiloten.be/sensors",
+        "tile",
+        "13_1_8",
+    );
+    await Promise.all([fs.add(fragment1), fs.add(fragment2)]);
+
+    for await (const temp of fs.getAllByFragmentation("https://streams.datapiloten.be/sensors", "tile")) {
+        console.log(temp);
+    }
+}
+
 async function test() {
     await testStream();
     await testFragmentation();
+    await testFragment();
 }
 
 test();

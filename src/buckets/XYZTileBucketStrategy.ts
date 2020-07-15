@@ -9,8 +9,8 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
     protected minZoom: number;
     protected maxZoom: number;
 
-    constructor(shaclPath: URI[], minZoom: number, maxZoom: number) {
-        super(shaclPath);
+    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], minZoom: number, maxZoom: number) {
+        super(streamID, fragmentName, shaclPath);
         this.minZoom = minZoom;
         this.maxZoom = maxZoom;
     }
@@ -42,7 +42,7 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
     protected getBucket(zoom, x, y): Bucket {
         const k = `${zoom}_${x}_${y}`;
         if (!this.buckets.has(k)) {
-            const bucket = new Bucket(FragmentKind.XYZ_TILE, `tile_${this.shaclPath}_${k}`, k);
+            const bucket = new Bucket(this.streamID, this.fragmentName, k);
             this.buckets.set(k, bucket);
         }
 

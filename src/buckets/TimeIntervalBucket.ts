@@ -7,8 +7,8 @@ import BucketStrategy from "./BucketStrategy";
 export default class TimeIntervalBucketStrategy extends BucketStrategy {
     protected interval: number;
 
-    constructor(shaclPath: URI[], interval: number) {
-        super(shaclPath);
+    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], interval: number) {
+        super(streamID, fragmentName, shaclPath);
         this.interval = interval;
     }
 
@@ -27,11 +27,7 @@ export default class TimeIntervalBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(
-                FragmentKind.TIME_INTERVAL,
-                `interval_${this.interval}_${this.shaclPath}_${value}`,
-                value,
-            );
+            const bucket = new Bucket(this.streamID, this.fragmentName, value);
             this.buckets.set(value, bucket);
         }
 

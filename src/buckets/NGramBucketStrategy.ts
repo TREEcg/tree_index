@@ -8,8 +8,8 @@ export default class NGramBucketStrategy extends BucketStrategy {
     protected minLength: number;
     protected maxLength: number;
 
-    constructor(shaclPath: URI[], minLength: number, maxLength: number) {
-        super(shaclPath);
+    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], minLength: number, maxLength: number) {
+        super(streamID, fragmentName, shaclPath);
         this.minLength = minLength;
         this.maxLength = maxLength;
     }
@@ -32,7 +32,7 @@ export default class NGramBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(FragmentKind.NGRAM, `ngram_${this.shaclPath}_${value}`, value);
+            const bucket = new Bucket(this.streamID, this.fragmentName, value);
             this.buckets.set(value, bucket);
         }
 

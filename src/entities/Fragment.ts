@@ -2,17 +2,17 @@ import { URI } from "../util/constants";
 import FragmentKind from "./FragmentKind";
 
 export default class Fragment {
-    public identifier: string;
-    public value: any;
-    public kind: FragmentKind;
+    public streamID: URI;
+    public fragmentName: string;
+    public value: string;
 
     constructor(
-        kind: FragmentKind,
-        identifier: string,
-        value: any,
+        streamID: URI,
+        fragmentName: string,
+        value: string,
     ) {
-        this.kind = kind;
-        this.identifier = identifier;
+        this.streamID = streamID;
+        this.fragmentName = fragmentName;
         this.value = value;
     }
 }

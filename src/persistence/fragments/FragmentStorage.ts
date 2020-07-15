@@ -1,12 +1,7 @@
-import RDFEvent from "../../entities/Event";
+import Fragment from "../../entities/Fragment";
+import { URI } from "../../util/constants";
 
 export default abstract class Storage {
-    protected prefix: string;
-
-    constructor(prefix: string) {
-        this.prefix = prefix;
-    }
-
-    protected abstract async getAllByFragmentID(fragmentID: string): Promise<RDFEvent[]>;
-    protected abstract async addEvent(fragmentID: string, event: Event): Promise<void>;
+    public abstract getAllByFragmentation(streamID: URI, fragmentName: string): AsyncGenerator<Fragment>;
+    public abstract async add(fragment: Fragment): Promise<void>;
 }
