@@ -1,7 +1,7 @@
+import Bucket from "../entities/Fragment";
+import FragmentKind from "../entities/FragmentKind";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
-import Bucket from "./Bucket";
-import { BucketKind } from "./BucketKind";
 import BucketStrategy from "./BucketStrategy";
 
 export default class NGramBucketStrategy extends BucketStrategy {
@@ -32,7 +32,7 @@ export default class NGramBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(BucketKind.NGRAM, this.shaclPath, `ngram_${this.shaclPath}_${value}`);
+            const bucket = new Bucket(FragmentKind.NGRAM, `ngram_${this.shaclPath}_${value}`, value);
             this.buckets.set(value, bucket);
         }
 

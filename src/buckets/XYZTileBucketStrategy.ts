@@ -1,8 +1,8 @@
 import wkt = require("terraformer-wkt-parser");
+import Bucket from "../entities/Fragment";
+import FragmentKind from "../entities/FragmentKind";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
-import Bucket from "./Bucket";
-import { BucketKind } from "./BucketKind";
 import BucketStrategy from "./BucketStrategy";
 
 export default class XYZTileBucketStrategy extends BucketStrategy {
@@ -42,7 +42,7 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
     protected getBucket(zoom, x, y): Bucket {
         const k = `${zoom}_${x}_${y}`;
         if (!this.buckets.has(k)) {
-            const bucket = new Bucket(BucketKind.XYZ_TILE, this.shaclPath, `tile_${this.shaclPath}_${k}`);
+            const bucket = new Bucket(FragmentKind.XYZ_TILE, `tile_${this.shaclPath}_${k}`, k);
             this.buckets.set(k, bucket);
         }
 

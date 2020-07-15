@@ -1,7 +1,7 @@
+import Bucket from "../entities/Fragment";
+import FragmentKind from "../entities/FragmentKind";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
-import Bucket from "./Bucket";
-import { BucketKind } from "./BucketKind";
 import BucketStrategy from "./BucketStrategy";
 
 export default class TimeIntervalBucketStrategy extends BucketStrategy {
@@ -27,7 +27,11 @@ export default class TimeIntervalBucketStrategy extends BucketStrategy {
 
     protected getBucket(value: string): Bucket {
         if (!this.buckets.has(value)) {
-            const bucket = new Bucket(BucketKind.TIME_INTERVAL, this.shaclPath, `interval_${this.interval}_${this.shaclPath}_${value}`);
+            const bucket = new Bucket(
+                FragmentKind.TIME_INTERVAL,
+                `interval_${this.interval}_${this.shaclPath}_${value}`,
+                value,
+            );
             this.buckets.set(value, bucket);
         }
 

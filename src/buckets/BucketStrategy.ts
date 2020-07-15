@@ -1,5 +1,5 @@
 import RDFObject from "../entities/RDFObject";
-import Bucket from "./Bucket";
+import Bucket from "../entities/Fragment";
 
 export default abstract class BucketStrategy {
     protected shaclPath: string[];

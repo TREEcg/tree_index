@@ -1,8 +1,9 @@
 import factory = require("@rdfjs/data-model");
 import N3 = require("n3");
+import * as RdfString from "rdf-string";
 
 import { NamedNode, Quad } from "rdf-js";
-import BucketStorage from "../buckets/BucketStorage";
+import BucketStorage from "../persistence/fragments/FragmentStorage";
 import RDFObject from "../entities/RDFObject";
 import StateStorage from "../state/StateStorage";
 import { URI } from "../util/constants";
@@ -67,13 +68,16 @@ export default class EventStreamIngester extends Ingester {
     }
 
     public processObject(object: RDFObject) {
-        this.bucketStorage.addObject(object);
+        //this.bucketStorage.addObject(object);
         // this.tripleStorage...
     }
 
     protected async tick() {
+        console.log(new Date(), this.getCurrentPage());
         const data = await this.fetchPage(this.getCurrentPage());
-        return this.processPage(data);
+        this.processPage(data);
+        const self = this;
+        setTimeout(() => self.tick(), this.frequency);
     }
 
     protected findNextPage(store: N3.Store): string | undefined {
@@ -214,12 +218,15 @@ export default class EventStreamIngester extends Ingester {
     protected getPreviousData(): Quad[] | undefined {
         const data = this.stateStorage.get("previousData");
         if (data) {
-            return JSON.parse(data);
+            return JSON.parse(data).map((q) => RdfString.stringQuadToQuad(q));
         }
     }
 
     protected setPreviousData(data: Quad[]) {
-        return this.stateStorage.set("previousData", JSON.stringify(data));
+        return this.stateStorage.set(
+            "previousData",
+            JSON.stringify(data.map((q) => RdfString.quadToStringQuad(q)))
+        );
     }
 
     protected getForwardDirection(): boolean | undefined {

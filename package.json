@@ -15,12 +15,15 @@
   "dependencies": {
     "@types/n3": "^1.4.0",
     "@types/rdf-js": "^3.0.2",
+    "cassandra": "^0.1.0",
+    "cassandra-driver": "^4.5.2",
     "es6-promise": "^4.2.8",
     "isomorphic-fetch": "^2.2.1",
     "ldfetch": "^1.2.3",
     "m3": "0.0.0",
     "queue-fifo": "^0.2.6",
     "rdf": "^4.1.0",
+    "rdf-string": "^1.4.2",
     "terraformer-wkt-parser": "^1.2.1"
   },
   "pre-commit": [

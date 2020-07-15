@@ -1,4 +1,4 @@
-export default abstract class StageStorage {
+export default abstract class StateStorage {
     protected prefix: string;
 
     constructor(prefix: string) {
