@@ -3,8 +3,8 @@ import N3 = require("n3");
 import * as RdfString from "rdf-string";
 
 import { NamedNode, Quad } from "rdf-js";
-import BucketStorage from "../persistence/fragments/FragmentStorage";
 import RDFObject from "../entities/RDFObject";
+import BucketStorage from "../persistence/fragments/FragmentStorage";
 import StateStorage from "../state/StateStorage";
 import { URI } from "../util/constants";
 import Ingester from "./Ingester";
@@ -68,7 +68,7 @@ export default class EventStreamIngester extends Ingester {
     }
 
     public processObject(object: RDFObject) {
-        //this.bucketStorage.addObject(object);
+        // this.bucketStorage.addObject(object);
         // this.tripleStorage...
     }
 
@@ -225,7 +225,7 @@ export default class EventStreamIngester extends Ingester {
     protected setPreviousData(data: Quad[]) {
         return this.stateStorage.set(
             "previousData",
-            JSON.stringify(data.map((q) => RdfString.quadToStringQuad(q)))
+            JSON.stringify(data.map((q) => RdfString.quadToStringQuad(q))),
         );
     }
 
