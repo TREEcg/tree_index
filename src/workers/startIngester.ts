@@ -1,4 +1,4 @@
-const { workerData } = require('worker_threads');
+import { workerData } from "worker_threads";
 import { EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EventStreamIngester from "../ingesters/EventStreamIngester";
 import DummyStateStorage from "../state/DummyStateStorage";
