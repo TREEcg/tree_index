@@ -1,36 +1,35 @@
-﻿import cassandra = require("cassandra-driver");
+﻿import bodyParser = require('body-parser');
+import express = require("express");
+import adminRoutes from "./routes/admin";
 
-import DummyStageStorage from "./state/DummyStateStorage";
+const app = express();
 
-import EventStream from "./entities/EventStream";
-import Fragment from "./entities/Fragment";
-import Fragmentation from "./entities/Fragmentation";
-import FragmentKind from "./entities/FragmentKind";
-import CassandraFragmentationStorage from "./persistence/fragmentations/CassandraFragmentationStorage";
-import CassandraFragmentStorage from "./persistence/fragments/CassandraFragmentStorage";
-import CassandraEventStreamStorage from "./persistence/streams/CassandraEventStreamStorage";
-import EventStreamIngester from "./ingesters/EventStreamIngester";
-import CassandraEventStorage from "./persistence/events/CassandraEventStorage";
-import PrefixBucketStrategy from "./buckets/PrefixBucketStrategy";
+// body parsing
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 
-const state = new DummyStageStorage("AA");
-const client = new cassandra.Client({
-    contactPoints: ["172.17.0.2:9042"],
-    localDataCenter: "datacenter1",
+// CORS
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
 });
 
-async function testStream() {
-    const es = new CassandraEventStreamStorage(state, client);
+app.use("/streams", adminRoutes);
 
-    const stream = new EventStream("https://streams.datapiloten.be/sensors", "sensors");
-    await es.add(stream);
-    for await (const temp of es.getAll()) {
-        console.log(temp);
-    }
+// errors
+app.use((err: any, req, res, next) => {
+    res.status(err.status || 500);
+    res.json({ status: "failure", msg: err.message });
+});
 
-    console.log(await es.getByID("https://streams.datapiloten.be/sensors"));
-    console.log(await es.getByName("sensors"));
-}
+app.set("port", process.env.PORT || 3000);
+
+const server = app.listen(app.get("port"), () => {
+    console.debug("Express server listening on port " + server.address().port);
+});
+
+/*
 
 async function testFragmentation() {
     const fs = new CassandraFragmentationStorage(state, client);
@@ -124,6 +123,7 @@ async function addPrefixFragmentation() {
     }
     console.log(new Date());
 }
+*/
 
 async function test() {
     // await testStream();
@@ -141,12 +141,13 @@ async function test() {
     );
     */
 
-    testGetBucket();
+    // testGetBucket();
 
     // addPrefixFragmentation();
 }
 
 test();
+
 
 /*
 const ingesterState = new DummyStageStorage("aaaa");

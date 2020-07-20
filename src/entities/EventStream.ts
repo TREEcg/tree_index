@@ -1,17 +1,24 @@
 import { URI } from "../util/constants";
-import FragmentKind from "./FragmentKind";
+import EntityStatus from "./EntityStatus";
+import Fragmentation from "./Fragmentation";
+import ShaclProperty from "./ShaclProperty";
 
 export default class EventStream {
     public sourceURI: URI;
     public name: string;
-    public description: string | undefined;
-    public status: string | undefined;
+    public properties: ShaclProperty[];
+    public status: EntityStatus;
+    public fragmentations: Fragmentation[] | undefined;
 
     constructor(
         source: URI,
         name: string,
+        properties: ShaclProperty[],
+        status: EntityStatus,
     ) {
         this.sourceURI = source;
         this.name = name;
+        this.properties = properties;
+        this.status = status;
     }
 }

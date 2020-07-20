@@ -23,6 +23,7 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
                 r.shaclpath,
                 r.kind,
                 JSON.parse(r.params),
+                r.status,
             );
         }
     }
@@ -38,19 +39,21 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
                 r.shaclpath,
                 r.kind,
                 JSON.parse(r.params),
+                r.status,
             );
         }
     }
 
     public async add(fragmentation: Fragmentation): Promise<void> {
-        const base = `INSERT INTO proto.fragmentations_by_stream (streamID, name, shaclPath, kind, params)
-                      VALUES (?, ?, ?, ?, ?)`;
+        const base = `INSERT INTO proto.fragmentations_by_stream (streamID, name, shaclPath, kind, params, status)
+                      VALUES (?, ?, ?, ?, ?, ?)`;
         const params = [
             fragmentation.streamID,
             fragmentation.name,
             fragmentation.shaclPath,
             fragmentation.kind,
             JSON.stringify(fragmentation.params),
+            fragmentation.status,
         ];
         await this.client.execute(
             base,

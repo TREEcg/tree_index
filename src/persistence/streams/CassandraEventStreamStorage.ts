@@ -16,7 +16,7 @@ export default class CassandraEventStreamStorage extends EventStreamStorage {
         const results = await this.client.execute(base);
 
         for (const r of results.rows) {
-            yield new EventStream(r.streamid, r.name);
+            yield new EventStream(r.streamid, r.name, JSON.parse(r.properties), r.status);
         }
     }
 
@@ -25,7 +25,7 @@ export default class CassandraEventStreamStorage extends EventStreamStorage {
         const results = await this.client.execute(base, [uri], { prepare: true });
 
         for (const r of results.rows) {
-            return new EventStream(r.streamid, r.name);
+            return new EventStream(r.streamid, r.name, JSON.parse(r.properties), r.status);
         }
     }
 
@@ -34,21 +34,21 @@ export default class CassandraEventStreamStorage extends EventStreamStorage {
         const results = await this.client.execute(base, [name], { prepare: true });
 
         for (const r of results.rows) {
-            return new EventStream(r.streamid, r.name);
+            return new EventStream(r.streamid, r.name, JSON.parse(r.properties), r.status);
         }
     }
 
     public async add(stream: EventStream): Promise<void> {
-        const q1 = "INSERT INTO proto.streams (streamID, name) VALUES (?, ?)";
-        const q2 = "INSERT INTO proto.streams_by_name (streamID, name) VALUES (?, ?)";
+        const q1 = "INSERT INTO proto.streams (streamID, name, properties, status) VALUES (?, ?, ?, ?)";
+        const q2 = "INSERT INTO proto.streams_by_name (streamID, name, properties, status) VALUES (?, ?, ?, ?)";
         const p1 = this.client.execute(
             q1,
-            [stream.sourceURI, stream.name],
+            [stream.sourceURI, stream.name, JSON.stringify(stream.properties), stream.status],
             { prepare: true },
         );
         const p2 = this.client.execute(
             q2,
-            [stream.sourceURI, stream.name],
+            [stream.sourceURI, stream.name, JSON.stringify(stream.properties), stream.status],
             { prepare: true },
         );
         await Promise.all([p1, p2]);
