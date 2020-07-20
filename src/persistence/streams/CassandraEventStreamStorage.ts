@@ -1,13 +1,13 @@
 import cassandra = require("cassandra-driver");
 import EventStream from "../../entities/EventStream";
-import StateStorage from "../../state/StateStorage";
+import StateStorage from "../state/StateStorage";
 import EventStreamStorage from "./EventStreamStorage";
 
 export default class CassandraEventStreamStorage extends EventStreamStorage {
     protected client: cassandra.Client;
 
-    constructor(stateStorage: StateStorage, client: cassandra.Client) {
-        super(stateStorage);
+    constructor(client: cassandra.Client) {
+        super();
         this.client = client;
     }
 

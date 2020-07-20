@@ -7,7 +7,7 @@ import RDFEvent from "../entities/Event";
 import EventStorage from "../persistence/events/EventStorage";
 import FragmentationStorage from "../persistence/fragmentations/FragmentationStorage";
 import FragmentStorage from "../persistence/fragments/FragmentStorage";
-import StateStorage from "../state/StateStorage";
+import StateStorage from "../persistence/state/StateStorage";
 import { URI } from "../util/constants";
 import Ingester from "./Ingester";
 import EventStreamStorage from "../persistence/streams/EventStreamStorage";
@@ -82,9 +82,9 @@ export default class EventStreamIngester extends Ingester {
             .forEach((e) => this.processEvent(e as RDFEvent));
 
         // check if this page is full
-        const nextPage = this.findNextPage(store);
+        const nextPage = await this.findNextPage(store);
         if (nextPage) {
-            this.setCurrentPage(nextPage);
+            await this.setCurrentPage(nextPage);
         }
 
         // remember which quads were just processed
@@ -120,8 +120,8 @@ export default class EventStreamIngester extends Ingester {
     }
 
     protected async tick() {
-        console.log(new Date(), this.getCurrentPage());
-        const data = await this.fetchPage(this.getCurrentPage());
+        console.log(new Date(), await this.getCurrentPage());
+        const data = await this.fetchPage(await this.getCurrentPage());
         const finished = await this.processPage(data);
         // fetch 10 times faster if there are more pages
         const delay = finished ? this.frequency : this.frequency / 10;
@@ -129,11 +129,11 @@ export default class EventStreamIngester extends Ingester {
         setTimeout(() => self.tick(), delay);
     }
 
-    protected findNextPage(store: N3.Store): string | undefined {
+    protected async findNextPage(store: N3.Store): Promise<string | undefined> {
         // most common case: direction is known from handling previous pages
-        if (this.getForwardDirection() === true) {
+        if (await this.getForwardDirection() === true) {
             return this.getHydraNext(store) || this.getNextRelation(store);
-        } else if (this.getForwardDirection() === false) {
+        } else if (await this.getForwardDirection() === false) {
             return this.getHydraPrevious(store) || this.getPreviousRelation(store);
         }
 
@@ -168,22 +168,22 @@ export default class EventStreamIngester extends Ingester {
      * State methods
      */
 
-    protected getCurrentPage(): string {
-        return this.stateStorage.get("currentPage") || this.sourceURI;
+    protected async getCurrentPage(): Promise<string> {
+        return await this.stateStorage.get(`page_${this.sourceURI}`) || this.sourceURI;
     }
 
-    protected setCurrentPage(page: URI) {
-        return this.stateStorage.set("currentPage", page);
+    protected async setCurrentPage(page: URI) {
+        return this.stateStorage.set(`page_${this.sourceURI}`, page);
     }
 
-    protected getForwardDirection(): boolean | undefined {
-        const data = this.stateStorage.get("forward");
+    protected async getForwardDirection(): Promise<boolean | undefined> {
+        const data = await this.stateStorage.get(`direction_${this.sourceURI}`);
         if (data) {
             return JSON.parse(data);
         }
     }
 
-    protected setForwardDirection(value: boolean) {
-        return this.stateStorage.set("forward", JSON.stringify(value));
+    protected async setForwardDirection(value: boolean) {
+        return this.stateStorage.set(`direction_${this.sourceURI}`, JSON.stringify(value));
     }
 }

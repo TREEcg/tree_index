@@ -1,14 +1,14 @@
 import cassandra = require("cassandra-driver");
 import Fragmentation from "../../entities/Fragmentation";
-import StateStorage from "../../state/StateStorage";
+import StateStorage from "../state/StateStorage";
 import { URI } from "../../util/constants";
 import FragmentationStorage from "./FragmentationStorage";
 
 export default class CassandraFragmentationStorage extends FragmentationStorage {
     protected client: cassandra.Client;
 
-    constructor(stateStorage: StateStorage, client: cassandra.Client) {
-        super(stateStorage);
+    constructor(client: cassandra.Client) {
+        super();
         this.client = client;
     }
 

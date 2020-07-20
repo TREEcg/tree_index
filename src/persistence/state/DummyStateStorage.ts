@@ -12,7 +12,7 @@ export default class DummyStageStorage extends StateStorage {
         this.data[key] = value;
     }
 
-    public get(key: string): string | null {
+    public get(key: string): Promise<string | undefined> {
         return this.data[key];
     }
 }
