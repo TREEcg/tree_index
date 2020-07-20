@@ -1,9 +1,9 @@
 import cassandra = require("cassandra-driver");
 import CassandraFragmentationStorage from "./persistence/fragmentations/CassandraFragmentationStorage";
 import CassandraFragmentStorage from "./persistence/fragments/CassandraFragmentStorage";
+import CassandraEventStorage from "./persistence/events/CassandraEventStorage";
 import CassandraEventStreamStorage from "./persistence/streams/CassandraEventStreamStorage";
 import DummyStageStorage from "./state/DummyStateStorage";
-import CassandraEventStorage from "./persistence/events/CassandraEventStorage";
 
 const streamState = new DummyStageStorage();
 const fragmentationState = new DummyStageStorage();

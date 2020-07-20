@@ -19,12 +19,13 @@ import FragmentStorage from "../persistence/fragments/FragmentStorage";
 import StateStorage from "../state/StateStorage";
 import { URI } from "../util/constants";
 import Ingester from "./Ingester";
+import EventStreamStorage from "../persistence/streams/EventStreamStorage";
+import EntityStatus from "../entities/EntityStatus";
 
 export default class EventStreamIngester extends Ingester {
-    // bucket storage
-    // triple storage
-
+    protected previousData: Quad[] | undefined;
     protected stateStorage: StateStorage;
+    protected eventStreamStorage: EventStreamStorage;
     protected fragmentationStorage: FragmentationStorage;
     protected fragmentStorage: FragmentStorage;
     protected eventStorage: EventStorage;
@@ -36,12 +37,14 @@ export default class EventStreamIngester extends Ingester {
         source: URI,
         frequency: number,
         stateStorage: StateStorage,
+        eventStreamStorage: EventStreamStorage,
         fragmentationStorage: FragmentationStorage,
         fragmentStorage: FragmentStorage,
         eventStorage: EventStorage,
     ) {
         super(source);
         this.stateStorage = stateStorage;
+        this.eventStreamStorage = eventStreamStorage;
         this.fragmentationStorage = fragmentationStorage;
         this.fragmentStorage = fragmentStorage;
         this.eventStorage = eventStorage;
@@ -57,14 +60,18 @@ export default class EventStreamIngester extends Ingester {
 
     // returns true if this was the last page
     public async processPage(data: Quad[]): Promise<boolean> {
+        const stream = await this.eventStreamStorage.getByID(this.sourceURI);
+        if (!stream) {
+            throw new Error("AAAAAAAAAAAAAAAAAAA");
+        }
+
         const store: N3.Store = new N3.Store();
         store.addQuads(data);
 
         // only process new data
-        const previousData = this.getPreviousData();
-        if (previousData) {
+        if (this.previousData) {
             // data only gets added so subtract known data
-            store.removeQuads(previousData);
+            store.removeQuads(this.previousData);
         }
 
         // these members are new
@@ -89,9 +96,17 @@ export default class EventStreamIngester extends Ingester {
         }
 
         // remember which quads were just processed
-        this.setPreviousData(data);
+        this.previousData = data;
 
-        return Boolean(nextPage);
+        if (nextPage) {
+            return false;
+        }
+
+        // this was the last page
+        stream.status = EntityStatus.ENABLED;
+        this.eventStreamStorage.add(stream);
+
+        return true;
     }
 
     public processEvent(event: RDFEvent) {
@@ -203,20 +218,6 @@ export default class EventStreamIngester extends Ingester {
 
     protected setCurrentPage(page: URI) {
         return this.stateStorage.set("currentPage", page);
-    }
-
-    protected getPreviousData(): Quad[] | undefined {
-        const data = this.stateStorage.get("previousData");
-        if (data) {
-            return JSON.parse(data).map((q) => RdfString.stringQuadToQuad(q));
-        }
-    }
-
-    protected setPreviousData(data: Quad[]) {
-        return this.stateStorage.set(
-            "previousData",
-            JSON.stringify(data.map((q) => RdfString.quadToStringQuad(q))),
-        );
     }
 
     protected getForwardDirection(): boolean | undefined {
