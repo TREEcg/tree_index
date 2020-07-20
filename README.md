@@ -81,6 +81,12 @@ CREATE TABLE proto.events_by_stream (
   eventData text,
   PRIMARY KEY (streamID, eventTime, eventID)
 ) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
+
+CREATE TABLE proto.state ( 
+  key text, 
+  value text,
+  PRIMARY KEY (key)
+);
 ```
 
 # Server setup
