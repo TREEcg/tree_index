@@ -8,6 +8,13 @@ export default abstract class EventStorage {
         fragmentName: string,
         bucketValue: string,
     ): AsyncGenerator<RDFEvent>;
+    public abstract getLimitedByFragment(
+        streamID: URI,
+        fragmentName: string,
+        bucketValue: string,
+        limit: number,
+        sinceDate: string,
+    ): AsyncGenerator<RDFEvent>;
     public abstract async getByID(identifier: string): Promise<RDFEvent | undefined>;
 
     public abstract async add(streamID: URI, event: RDFEvent): Promise<void>;

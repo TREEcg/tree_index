@@ -1,15 +1,11 @@
 import Bucket from "../entities/Fragment";
-import FragmentKind from "../entities/FragmentKind";
+import Fragmentation from "../entities/Fragmentation";
 import RDFObject from "../entities/RDFObject";
-import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
 
 export default class SuffixBucketStrategy extends BucketStrategy {
-    // protected maxLength: number | undefined;
-
-    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], maxLength?: number) {
-        super(streamID, fragmentName, shaclPath);
-        // this.maxLength = maxLength;
+    constructor(fragmentation: Fragmentation) {
+        super(fragmentation);
     }
 
     public labelObject(object: RDFObject): Bucket[] {

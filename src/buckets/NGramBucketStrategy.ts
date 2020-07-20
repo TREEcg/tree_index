@@ -1,15 +1,14 @@
 import Bucket from "../entities/Fragment";
-import FragmentKind from "../entities/FragmentKind";
+import Fragmentation from "../entities/Fragmentation";
 import RDFObject from "../entities/RDFObject";
-import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
 
 export default class NGramBucketStrategy extends BucketStrategy {
     protected minLength: number;
     protected maxLength: number;
 
-    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], minLength: number, maxLength: number) {
-        super(streamID, fragmentName, shaclPath);
+    constructor(fragmentation: Fragmentation, minLength: number, maxLength: number) {
+        super(fragmentation);
         this.minLength = minLength;
         this.maxLength = maxLength;
     }

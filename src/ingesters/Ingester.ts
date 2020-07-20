@@ -22,7 +22,106 @@ export default abstract class Ingester {
     }
 
     public abstract processPage(data: Quad[]): void;
-    public abstract processObject(object: RDFObject): void;
+
+    /*
+     * Hypermedia methods
+     */
+
+    protected getNextRelation(store: N3.Store): string | undefined {
+        // look for relation that are greater in time
+        const relationIDs = store
+            .getQuads(
+                null,
+                factory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                factory.namedNode("https://w3id.org/tree#GreaterThanRelation"),
+                null,
+            )
+            .map((q) => q.subject.id);
+
+        let firstID: string | undefined;
+        let firstTime: string | undefined;
+
+        // there may be multiple relations in this page
+        for (const relationID of relationIDs) {
+            const relationData = store.getQuads(relationID, null, null, null);
+
+            const treeNodes = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#node");
+            const treeValues = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#value");
+
+            if (treeNodes && treeValues) {
+                const treeNode = treeNodes[0].object.id;
+                const treeValue = treeValues[0].object;
+
+                // only use relations with a time value
+                // remember the 'smallest' one
+                if (treeValue.termType === "Literal" &&
+                    treeValue.datatypeString === "http://www.w3.org/2001/XMLSchema#dateTime") {
+                    if (!firstTime || treeValue.value < firstTime) {
+                        firstID = treeNode;
+                        firstTime = treeValue.value;
+                    }
+                }
+            }
+        }
+
+        return firstID;
+    }
+
+    protected getPreviousRelation(store: N3.Store): string | undefined {
+        // look for relation that are lesser in time
+        const relationIDs = store
+            .getQuads(
+                null,
+                factory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+                factory.namedNode("https://w3id.org/tree#LessThanRelation"),
+                null,
+            )
+            .map((q) => q.subject.id);
+
+        let lastID: string | undefined;
+        let lastTime: string | undefined;
+
+        // there may be multiple relations in this page
+        for (const relationID of relationIDs) {
+            const relationData = store.getQuads(relationID, null, null, null);
+
+            const treeNodes = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#node");
+            const treeValues = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#value");
+
+            if (treeNodes && treeValues) {
+                const treeNode = treeNodes[0].object.id;
+                const treeValue = treeValues[0].object;
+
+                // only use relations with a time value
+                // remember the 'largest' one
+                if (treeValue.termType === "Literal" &&
+                    treeValue.datatypeString === "http://www.w3.org/2001/XMLSchema#dateTime") {
+                    if (!lastTime || treeValue.value > lastTime) {
+                        lastID = treeNode;
+                        lastTime = treeValue.value;
+                    }
+                }
+            }
+        }
+
+        return lastID;
+    }
+
+    protected getHydraNext(store: N3.Store): string | undefined {
+        const quads = store.getQuads(null, factory.namedNode("http://www.w3.org/ns/hydra/core#next"), null, null);
+
+        for (const quad of quads) {
+            return quad.object.id;
+        }
+    }
+
+    protected getHydraPrevious(store: N3.Store): string | undefined {
+        const quads = store.getQuads(null, factory.namedNode("http://www.w3.org/ns/hydra/core#previous"), null, null);
+
+        for (const quad of quads) {
+            return quad.object.id;
+        }
+    }
 
     protected buildObject(id: URI, store: N3.Store): RDFObject {
         const data: Quad[] = [];

@@ -1,4 +1,4 @@
-import { Quad } from "n3";
+import { Quad } from "rdf-js";
 import { URI } from "../util/constants";
 import RDFObject from "./RDFObject";
 

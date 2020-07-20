@@ -17,12 +17,12 @@ export default class CassandraEventStorage extends EventStorage {
     public async* getAllByStream(streamID: string): AsyncGenerator<RDFEvent> {
         const base = "SELECT * FROM proto.events_by_stream WHERE streamID = ?;";
         const emitter = this.client.stream(base, [streamID], { prepare: true });
-        const baseGenerator = fromEmitter(emitter, { onNext: "data" });
+        const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
 
         for await (const r of baseGenerator) {
             yield new RDFEvent(
                 (r as any).eventid,
-                (r as any).eventdata.map((q) => RdfString.stringQuadToQuad(q)),
+                JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
             );
         }
@@ -34,15 +34,50 @@ export default class CassandraEventStorage extends EventStorage {
         bucketValue: string,
     ): AsyncGenerator<RDFEvent> {
         const base = `SELECT * FROM proto.events_by_bucket
-                      WHERE streamID = ? and fragmentName = ? and bucketValue = ?;
+                      WHERE streamID = ? and fragmentName = ? and bucketValue = ? LIMIT 1000;
                       `;
         const emitter = this.client.stream(base, [streamID, fragmentName, bucketValue], { prepare: true });
-        const baseGenerator = fromEmitter(emitter, { onNext: "data" });
+        const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
 
         for await (const r of baseGenerator) {
             yield new RDFEvent(
                 (r as any).eventid,
-                (r as any).eventdata.map((q) => RdfString.stringQuadToQuad(q)),
+                JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
+                (r as any).eventtime,
+            );
+        }
+    }
+
+    public async* getLimitedByFragment(
+        streamID: string,
+        fragmentName: string,
+        bucketValue: string,
+        limit = 1000,
+        sinceDate?: string,
+    ): AsyncGenerator<RDFEvent> {
+        let emitter;
+        if (!sinceDate) {
+            const base = `SELECT * FROM proto.events_by_bucket
+                          WHERE streamID = ? and fragmentName = ? and bucketValue = ? LIMIT ?;
+                        `;
+            emitter = this.client.stream(base, [streamID, fragmentName, bucketValue, limit], { prepare: true });
+        } else {
+            const base = `SELECT * FROM proto.events_by_bucket
+                          WHERE streamID = ? and fragmentName = ? and bucketValue = ? and eventTime >= ? LIMIT ?;
+                        `;
+            emitter = this.client.stream(
+                base,
+                [streamID, fragmentName, bucketValue, sinceDate, limit],
+                { prepare: true },
+            );
+        }
+
+        const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
+
+        for await (const r of baseGenerator) {
+            yield new RDFEvent(
+                (r as any).eventid,
+                JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
             );
         }
@@ -55,7 +90,7 @@ export default class CassandraEventStorage extends EventStorage {
         for (const r of results.rows) {
             return new RDFEvent(
                 r.eventid,
-                r.eventdata.map((q) => RdfString.stringQuadToQuad(q)),
+                JSON.parse(r.eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 r.eventtime,
             );
         }
@@ -63,11 +98,11 @@ export default class CassandraEventStorage extends EventStorage {
 
     public async add(streamID: URI, event: RDFEvent): Promise<void> {
         const base = `INSERT INTO proto.events_by_stream (streamID, eventId, eventData, eventTime)
-                      VALUES (?, ?, ?, ?, ?)`;
+                      VALUES (?, ?, ?, ?)`;
         const params = [
             streamID,
             event.id,
-            event.data.map((q) => RdfString.quadToStringQuad(q)),
+            JSON.stringify(event.data.map((q) => RdfString.quadToStringQuad(q))),
             event.timestamp,
         ];
         await this.client.execute(
@@ -85,13 +120,13 @@ export default class CassandraEventStorage extends EventStorage {
         event: RDFEvent,
     ): Promise<void> {
         const base = `INSERT INTO proto.events_by_bucket (streamID, fragmentName, bucketValue, eventId, eventData, eventTime)
-                      VALUES (?, ?, ?, ?, ?)`;
+                      VALUES (?, ?, ?, ?, ?, ?)`;
         const params = [
             streamID,
             fragmentName,
             bucketValue,
             event.id,
-            event.data.map((q) => RdfString.quadToStringQuad(q)),
+            JSON.stringify(event.data.map((q) => RdfString.quadToStringQuad(q))),
             event.timestamp,
         ];
         await this.client.execute(

@@ -1,18 +1,19 @@
 import Bucket from "../entities/Fragment";
+import Fragmentation from "../entities/Fragmentation";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 
 export default abstract class BucketStrategy {
-    protected streamID: URI;
-    protected fragmentName: string;
+    public readonly streamID: URI;
+    public readonly fragmentName: string;
     protected shaclPath: string[];
     protected buckets: Map<string, Bucket>;
 
-    constructor(streamID: URI, fragmentName: string, shaclPath: string[]) {
-        this.shaclPath = shaclPath;
+    constructor(fragmentation: Fragmentation) {
+        this.shaclPath = fragmentation.shaclPath;
         this.buckets = new Map();
-        this.streamID = streamID;
-        this.fragmentName = fragmentName;
+        this.streamID = fragmentation.streamID;
+        this.fragmentName = fragmentation.name;
     }
 
     public abstract labelObject(object: RDFObject): Bucket[];

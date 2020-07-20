@@ -15,7 +15,7 @@ export default class CassandraFragmentStorage extends BucketStorage {
     public async* getAllByFragmentation(streamID: string, fragmentName: string): AsyncGenerator<Fragment> {
         const base = "SELECT * FROM proto.buckets_by_fragmentation WHERE streamID = ? AND fragmentName = ?;";
         const emitter = this.client.stream(base, [streamID, fragmentName], { prepare: true });
-        const baseGenerator = fromEmitter(emitter, { onNext: "data" });
+        const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
 
         for await (const r of baseGenerator) {
             yield new Fragment(

@@ -1,16 +1,15 @@
 import wkt = require("terraformer-wkt-parser");
 import Bucket from "../entities/Fragment";
-import FragmentKind from "../entities/FragmentKind";
+import Fragmentation from "../entities/Fragmentation";
 import RDFObject from "../entities/RDFObject";
-import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
 
 export default class XYZTileBucketStrategy extends BucketStrategy {
     protected minZoom: number;
     protected maxZoom: number;
 
-    constructor(streamID: URI, fragmentName: string, shaclPath: URI[], minZoom: number, maxZoom: number) {
-        super(streamID, fragmentName, shaclPath);
+    constructor(fragmentation: Fragmentation, minZoom: number, maxZoom: number) {
+        super(fragmentation);
         this.minZoom = minZoom;
         this.maxZoom = maxZoom;
     }

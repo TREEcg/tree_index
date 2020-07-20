@@ -3,8 +3,19 @@ import N3 = require("n3");
 import * as RdfString from "rdf-string";
 
 import { NamedNode, Quad } from "rdf-js";
-import RDFObject from "../entities/RDFObject";
-import BucketStorage from "../persistence/fragments/FragmentStorage";
+import BucketStrategy from "../buckets/BucketStrategy";
+import IdentityBucketStrategy from "../buckets/IdentityBucketStrategy";
+import NGramBucketStrategy from "../buckets/NGramBucketStrategy";
+import PrefixBucketStrategy from "../buckets/PrefixBucketStrategy";
+import SuffixBucketStrategy from "../buckets/SuffixBucketStrategy";
+import TimeIntervalBucketStrategy from "../buckets/TimeIntervalBucket";
+import XYZTileBucketStrategy from "../buckets/XYZTileBucketStrategy";
+import RDFEvent from "../entities/Event";
+import Fragmentation from "../entities/Fragmentation";
+import FragmentKind from "../entities/FragmentKind";
+import EventStorage from "../persistence/events/EventStorage";
+import FragmentationStorage from "../persistence/fragmentations/FragmentationStorage";
+import FragmentStorage from "../persistence/fragments/FragmentStorage";
 import StateStorage from "../state/StateStorage";
 import { URI } from "../util/constants";
 import Ingester from "./Ingester";
@@ -14,29 +25,37 @@ export default class EventStreamIngester extends Ingester {
     // triple storage
 
     protected stateStorage: StateStorage;
-    protected bucketStorage: BucketStorage;
+    protected fragmentationStorage: FragmentationStorage;
+    protected fragmentStorage: FragmentStorage;
+    protected eventStorage: EventStorage;
     protected frequency: number;
 
+    protected bucketStrategies: Map<string, BucketStrategy>;
+
     constructor(
-        stateStorage: StateStorage,
-        bucketStorage: BucketStorage,
-        frequency: number,
         source: URI,
+        frequency: number,
+        stateStorage: StateStorage,
+        fragmentationStorage: FragmentationStorage,
+        fragmentStorage: FragmentStorage,
+        eventStorage: EventStorage,
     ) {
         super(source);
         this.stateStorage = stateStorage;
-        this.bucketStorage = bucketStorage;
+        this.fragmentationStorage = fragmentationStorage;
+        this.fragmentStorage = fragmentStorage;
+        this.eventStorage = eventStorage;
         this.frequency = frequency;
+        this.bucketStrategies = new Map();
 
         if (!this.getCurrentPage()) {
             this.setCurrentPage(source);
         }
 
         this.tick();
-        // setInterval(this.tick, this.frequency);
     }
 
-    public processPage(data: Quad[]) {
+    public async processPage(data: Quad[]) {
         const store: N3.Store = new N3.Store();
         store.addQuads(data);
 
@@ -53,9 +72,14 @@ export default class EventStreamIngester extends Ingester {
             .map((q: Quad) => q.object)
             .filter((o) => o.termType === "NamedNode") as NamedNode[];
 
+        // in case any new fragmentations have been added recently
+        await this.refreshStrategies();
+
         // process as self-contained objects
-        const objects = members.map((m) => this.buildObject(m.value, store));
-        objects.forEach((o) => this.processObject(o));
+        const objects = members.map((m) => this.buildEvent(m.value, store));
+        objects
+            .filter((o) => o !== undefined) // filter out broken events
+            .forEach((e) => this.processEvent(e as RDFEvent));
 
         // check if this page is full
         const nextPage = this.findNextPage(store);
@@ -67,9 +91,58 @@ export default class EventStreamIngester extends Ingester {
         this.setPreviousData(data);
     }
 
-    public processObject(object: RDFObject) {
-        // this.bucketStorage.addObject(object);
-        // this.tripleStorage...
+    public processEvent(event: RDFEvent) {
+        this.eventStorage.add(this.sourceURI, event);
+        for (const strategy of this.bucketStrategies.values()) {
+            for (const bucket of strategy.labelObject(event)) {
+                this.eventStorage.addToBucket(this.sourceURI, strategy.fragmentName, bucket.value, event);
+            }
+        }
+    }
+
+    public async refreshStrategies(): Promise<void> {
+        for await (const fragmentation of this.fragmentationStorage.getAllByStream(this.sourceURI)) {
+            if (!this.bucketStrategies.has(fragmentation.name)) {
+                const strategy = this.createStrategy(fragmentation);
+                this.bucketStrategies.set(fragmentation.name, strategy);
+            }
+        }
+    }
+
+    protected createStrategy(fragmentation: Fragmentation): BucketStrategy {
+        switch (fragmentation.kind) {
+            case FragmentKind.IDENTITY:
+                return new IdentityBucketStrategy(
+                    fragmentation,
+                );
+            case FragmentKind.NGRAM:
+                return new NGramBucketStrategy(
+                    fragmentation,
+                    fragmentation.params["minLength"] || 2,
+                    fragmentation.params["maxLength"] || 4,
+                );
+            case FragmentKind.PREFIX:
+                return new PrefixBucketStrategy(
+                    fragmentation,
+                );
+            case FragmentKind.SUFFIX:
+                return new SuffixBucketStrategy(
+                    fragmentation,
+                );
+            case FragmentKind.TIME_INTERVAL:
+                return new TimeIntervalBucketStrategy(
+                    fragmentation,
+                    fragmentation.params["interval"] || 20 * 60 * 1000,
+                );
+            case FragmentKind.XYZ_TILE:
+                return new XYZTileBucketStrategy(
+                    fragmentation,
+                    fragmentation.params["minZoom"] || 13,
+                    fragmentation.params["maxZoom"] || 15,
+                );
+            default:
+                throw new Error(`Unknown fragmentation ${fragmentation.kind}`);
+        }
     }
 
     protected async tick() {
@@ -103,103 +176,15 @@ export default class EventStreamIngester extends Ingester {
         }
     }
 
-    /*
-     * Hypermedia methods
-     */
-
-    protected getNextRelation(store: N3.Store): string | undefined {
-        // look for relation that are greater in time
-        const relationIDs = store
-            .getQuads(
-                null,
-                factory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                factory.namedNode("https://w3id.org/tree#GreaterThanRelation"),
-                null,
-            )
-            .map((q) => q.subject.id);
-
-        let firstID: string | undefined;
-        let firstTime: string | undefined;
-
-        // there may be multiple relations in this page
-        for (const relationID of relationIDs) {
-            const relationData = store.getQuads(relationID, null, null, null);
-
-            const treeNodes = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#node");
-            const treeValues = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#value");
-
-            if (treeNodes && treeValues) {
-                const treeNode = treeNodes[0].object.id;
-                const treeValue = treeValues[0].object;
-
-                // only use relations with a time value
-                // remember the 'smallest' one
-                if (treeValue.termType === "Literal" &&
-                    treeValue.datatypeString === "http://www.w3.org/2001/XMLSchema#dateTime") {
-                    if (!firstTime || treeValue.value < firstTime) {
-                        firstID = treeNode;
-                        firstTime = treeValue.value;
-                    }
-                }
+    protected buildEvent(id: URI, store: N3.Store): RDFEvent | undefined {
+        const object = this.buildObject(id, store);
+        for (const quad of object.data) {
+            if (quad.subject.value === id
+                && quad.object.termType === "Literal"
+                && quad.object.datatype.value === "http://www.w3.org/2001/XMLSchema#dateTime"
+            ) {
+                return new RDFEvent(object.id, object.data, quad.object.value);
             }
-        }
-
-        return firstID;
-    }
-
-    protected getPreviousRelation(store: N3.Store): string | undefined {
-        // look for relation that are lesser in time
-        const relationIDs = store
-            .getQuads(
-                null,
-                factory.namedNode("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
-                factory.namedNode("https://w3id.org/tree#LessThanRelation"),
-                null,
-            )
-            .map((q) => q.subject.id);
-
-        let lastID: string | undefined;
-        let lastTime: string | undefined;
-
-        // there may be multiple relations in this page
-        for (const relationID of relationIDs) {
-            const relationData = store.getQuads(relationID, null, null, null);
-
-            const treeNodes = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#node");
-            const treeValues = relationData.filter((q) => q.predicate.id === "https://w3id.org/tree#value");
-
-            if (treeNodes && treeValues) {
-                const treeNode = treeNodes[0].object.id;
-                const treeValue = treeValues[0].object;
-
-                // only use relations with a time value
-                // remember the 'largest' one
-                if (treeValue.termType === "Literal" &&
-                    treeValue.datatypeString === "http://www.w3.org/2001/XMLSchema#dateTime") {
-                    if (!lastTime || treeValue.value > lastTime) {
-                        lastID = treeNode;
-                        lastTime = treeValue.value;
-                    }
-                }
-            }
-        }
-
-        return lastID;
-    }
-
-    protected getHydraNext(store: N3.Store): string | undefined {
-        const quads = store.getQuads(null, factory.namedNode("http://www.w3.org/ns/hydra/core#next"), null, null);
-
-        for (const quad of quads) {
-            return quad.object.id;
-        }
-    }
-
-    protected getHydraPrevious(store: N3.Store): string | undefined {
-        const quads = store.getQuads(null, factory.namedNode("http://www.w3.org/ns/hydra/core#previous"), null, null);
-
-        for (const quad of quads) {
-            return quad.object.id;
         }
     }
 
