@@ -1,11 +1,11 @@
 import express = require("express");
 import asyncHandler = require("express-async-handler");
-import { STREAM_STORAGE, FRAGMENTATION_STORAGE } from "../config";
-import EventStream from "../entities/EventStream";
-import loadProperties from "../util/loadProperties";
+import { FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
+import EventStream from "../entities/EventStream";
 import Fragmentation from "../entities/Fragmentation";
 import FragmentKind from "../entities/FragmentKind";
+import loadProperties from "../util/loadProperties";
 
 const router = express.Router();
 
@@ -36,7 +36,7 @@ router.post("/", asyncHandler(async (req, res) => {
 
     const stream = new EventStream(source, name, properties, EntityStatus.LOADING);
     await STREAM_STORAGE.add(stream);
-    res.json({ status: "success" });
+    res.json({ status: "success", url: `/streams/${name}` });
 }));
 
 // GET /streams/:streamName

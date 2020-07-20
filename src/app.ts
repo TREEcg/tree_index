@@ -1,4 +1,4 @@
-﻿import bodyParser = require('body-parser');
+﻿import bodyParser = require("body-parser");
 import express = require("express");
 import adminRoutes from "./routes/admin";
 
@@ -147,7 +147,6 @@ async function test() {
 }
 
 test();
-
 
 /*
 const ingesterState = new DummyStageStorage("aaaa");
