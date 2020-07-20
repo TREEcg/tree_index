@@ -1,8 +1,13 @@
 ﻿import bodyParser = require("body-parser");
 import express = require("express");
+import expressPino = require("express-pino-logger");
+import { LOGGER } from "./config";
 import adminRoutes from "./routes/admin";
 
+const expressLogger = expressPino({ LOGGER });
 const app = express();
+
+app.use(expressLogger);
 
 // body parsing
 app.use(bodyParser.json());
@@ -26,10 +31,8 @@ app.use((err: any, req, res, next) => {
 app.set("port", process.env.PORT || 3000);
 
 const server = app.listen(app.get("port"), () => {
-    console.debug("Express server listening on port " + server.address().port);
+    LOGGER.debug("Express server listening on port " + server.address().port);
 });
-
-
 
 /*
 

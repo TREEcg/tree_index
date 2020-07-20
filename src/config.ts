@@ -1,4 +1,5 @@
 import cassandra = require("cassandra-driver");
+import pino = require("pino");
 import CassandraFragmentationStorage from "./persistence/fragmentations/CassandraFragmentationStorage";
 import CassandraFragmentStorage from "./persistence/fragments/CassandraFragmentStorage";
 import CassandraEventStorage from "./persistence/events/CassandraEventStorage";
@@ -14,6 +15,7 @@ const cassandraClient = new cassandra.Client({
     },
 });
 
+export const LOGGER = pino({ level: process.env.LOG_LEVEL || "info" });
 export const STREAM_STORAGE = new CassandraEventStreamStorage(cassandraClient);
 export const FRAGMENTATION_STORAGE = new CassandraFragmentationStorage(cassandraClient);
 export const FRAGMENT_STORAGE = new CassandraFragmentStorage(cassandraClient);

@@ -13,6 +13,7 @@ import Ingester from "./Ingester";
 import EventStreamStorage from "../persistence/streams/EventStreamStorage";
 import EntityStatus from "../entities/EntityStatus";
 import createStrategy from "../util/createStrategy";
+import { LOGGER } from "../config";
 
 export default class EventStreamIngester extends Ingester {
     protected previousData: Quad[] | undefined;
@@ -120,7 +121,7 @@ export default class EventStreamIngester extends Ingester {
     }
 
     protected async tick() {
-        console.log(new Date(), await this.getCurrentPage());
+        LOGGER.info(`Fetching ${await this.getCurrentPage()}`);
         const data = await this.fetchPage(await this.getCurrentPage());
         const finished = await this.processPage(data);
         // fetch 10 times faster if there are more pages
