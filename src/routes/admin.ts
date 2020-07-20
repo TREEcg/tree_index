@@ -40,7 +40,7 @@ router.post("/", asyncHandler(async (req, res) => {
     await STREAM_STORAGE.add(stream);
 
     const workerPath = path.resolve(__dirname, "../workers/startIngester.js");
-
+    // tslint:disable-next-line: no-unused-expression
     new Worker(workerPath, {
         workerData: {
             uri: source,
@@ -63,8 +63,6 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     }
 
     stream.fragmentations = fragmentations;
-
-    const worker = new Worker('./worker.ts');
     res.json(stream);
 }));
 
@@ -118,6 +116,14 @@ router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
         EntityStatus.LOADING,
     );
     await FRAGMENTATION_STORAGE.add(fragmentation);
+
+    const workerPath = path.resolve(__dirname, "../workers/addFragmentation.js");
+    // tslint:disable-next-line: no-unused-expression
+    new Worker(workerPath, {
+        workerData: {
+            fragmentation,
+        },
+    });
 
     res.json({ status: "success", url: `/streams/${streamName}/fragmentations/${name}` });
 }));

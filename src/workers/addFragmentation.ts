@@ -1,23 +1,22 @@
 import { workerData } from "worker_threads";
-import { EVENT_STORAGE } from "../config";
+import { EVENT_STORAGE, FRAGMENTATION_STORAGE } from "../config";
+import EntityStatus from "../entities/EntityStatus";
+import Fragmentation from "../entities/Fragmentation";
 import createStrategy from "../util/createStrategy";
 
-const fragmentation = JSON.parse(workerData.fragmentation);
+const fragmentation: Fragmentation = workerData.fragmentation;
 const storage = EVENT_STORAGE;
 
 async function doStuff() {
     const bucketStrategy = createStrategy(fragmentation);
-    console.log(new Date());
-    let i = 0;
-    for await (const event of storage.getAllByStream("https://streams.datapiloten.be/sensors")) {
+    for await (const event of storage.getAllByStream(fragmentation.streamID)) {
         for (const bucket of bucketStrategy.labelObject(event)) {
             await storage.addToBucket(bucket.streamID, bucket.fragmentName, bucket.value, event);
         }
-        i += 1;
-        if (i % 1000 === 0) {
-            console.log(new Date(), i / 1000);
-        }
     }
+
+    fragmentation.status = EntityStatus.DISABLED;
+    FRAGMENTATION_STORAGE.add(fragmentation);
 }
 
 doStuff();
