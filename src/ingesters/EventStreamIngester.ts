@@ -55,7 +55,8 @@ export default class EventStreamIngester extends Ingester {
         this.tick();
     }
 
-    public async processPage(data: Quad[]) {
+    // returns true if this was the last page
+    public async processPage(data: Quad[]): Promise<boolean> {
         const store: N3.Store = new N3.Store();
         store.addQuads(data);
 
@@ -89,6 +90,8 @@ export default class EventStreamIngester extends Ingester {
 
         // remember which quads were just processed
         this.setPreviousData(data);
+
+        return Boolean(nextPage);
     }
 
     public processEvent(event: RDFEvent) {
@@ -148,9 +151,11 @@ export default class EventStreamIngester extends Ingester {
     protected async tick() {
         console.log(new Date(), this.getCurrentPage());
         const data = await this.fetchPage(this.getCurrentPage());
-        this.processPage(data);
+        const finished = await this.processPage(data);
+        // fetch 10 times faster if there are more pages
+        const delay = finished ? this.frequency : this.frequency / 10;
         const self = this;
-        setTimeout(() => self.tick(), this.frequency);
+        setTimeout(() => self.tick(), delay);
     }
 
     protected findNextPage(store: N3.Store): string | undefined {

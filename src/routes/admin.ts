@@ -1,5 +1,7 @@
 import express = require("express");
 import asyncHandler = require("express-async-handler");
+const path = require('path');
+import { Worker } from "worker_threads";
 import { FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import EventStream from "../entities/EventStream";
@@ -36,6 +38,15 @@ router.post("/", asyncHandler(async (req, res) => {
 
     const stream = new EventStream(source, name, properties, EntityStatus.LOADING);
     await STREAM_STORAGE.add(stream);
+
+    const workerPath = path.resolve(__dirname, "../workers/startIngester.js");
+
+    new Worker(workerPath, {
+        workerData: {
+            uri: source,
+            frequency: 60 * 1000, // 1 minute
+        },
+    });
     res.json({ status: "success", url: `/streams/${name}` });
 }));
 
@@ -52,6 +63,8 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     }
 
     stream.fragmentations = fragmentations;
+
+    const worker = new Worker('./worker.ts');
     res.json(stream);
 }));
 
