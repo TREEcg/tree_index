@@ -40,16 +40,16 @@ CREATE TABLE proto.streams (
   name text,
   properties text,
   status text,
-  PRIMARY KEY ((streamID), name)
-) WITH CLUSTERING ORDER BY (name ASC);
+  PRIMARY KEY (streamID),
+);
 
 CREATE TABLE proto.streams_by_name ( 
   streamID text, 
   name text,
   properties text,
   status text,
-  PRIMARY KEY ((name), streamID)
-) WITH CLUSTERING ORDER BY (streamID ASC);
+  PRIMARY KEY (name),
+);
 
 CREATE TABLE proto.fragmentations_by_stream ( 
   streamID text, 

@@ -34,19 +34,33 @@ router.post("/", asyncHandler(async (req, res) => {
         throw new Error("Name is invalid");
     }
 
-    const properties = await loadProperties(source);
+    const [existingStreamName, existingStreamID] = await Promise.all(
+        [STREAM_STORAGE.getByName(name), STREAM_STORAGE.getByID(source)],
+    );
 
+    if (existingStreamName && existingStreamName.sourceURI !== source) {
+        // make sure we don't change existing name -> event stream mappings
+        throw new Error(`This stream name is already used for ${existingStreamName.sourceURI}`);
+    }
+
+    const properties = await loadProperties(source);
     const stream = new EventStream(source, name, properties, EntityStatus.LOADING);
     await STREAM_STORAGE.add(stream);
 
-    const workerPath = path.resolve(__dirname, "../workers/startIngester.js");
-    // tslint:disable-next-line: no-unused-expression
-    new Worker(workerPath, {
-        workerData: {
-            uri: source,
-            frequency: 60 * 1000, // 1 minute
-        },
-    });
+    if (!existingStreamID || existingStreamName) {
+        // start ingesting this stream if it is new
+        // OR resume ingesting if this stream exists with the same name
+        const workerPath = path.resolve(__dirname, "../workers/startIngester.js");
+
+        // tslint:disable-next-line: no-unused-expression
+        new Worker(workerPath, {
+            workerData: {
+                uri: source,
+                frequency: 60 * 1000, // 1 minute
+            },
+        });
+    }
+
     res.json({ status: "success", url: `/streams/${name}` });
 }));
 

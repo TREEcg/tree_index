@@ -1,5 +1,4 @@
 import EventStream from "../../entities/EventStream";
-import StateStorage from "../state/StateStorage";
 import { URI } from "../../util/constants";
 
 export default abstract class EventStreamStorage {
