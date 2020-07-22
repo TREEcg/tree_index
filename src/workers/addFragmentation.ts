@@ -11,13 +11,13 @@ async function doStuff() {
     const bucketStrategy = createStrategy(fragmentation);
     let i = 0;
     for await (const event of storage.getAllByStream(fragmentation.streamID)) {
-        for (const bucket of bucketStrategy.labelObject(event)) {
-            await storage.addToBucket(bucket.streamID, bucket.fragmentName, bucket.value, event);
-            i++;
+        await Promise.all(bucketStrategy.labelObject(event).map((b) => {
+            return storage.addToBucket(b.streamID, b.fragmentName, b.value, event);
+        }));
+        i++;
 
-            if (i % 1000 === 0) {
-                LOGGER.info(`${fragmentation.streamID} - ${fragmentation.name} processed ${i} events`);
-            }
+        if (i % 1000 === 0) {
+            LOGGER.info(`${fragmentation.streamID} - ${fragmentation.name} processed ${i} events`);
         }
     }
 
