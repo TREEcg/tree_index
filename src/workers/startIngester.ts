@@ -6,6 +6,8 @@ const source = workerData.uri;
 const frequency = workerData.frequency;
 const stateStorage = STATE_STORAGE;
 
+// it's not unused, it's just a looping thing
+// tslint:disable-next-line: no-unused-expression
 new EventStreamIngester(
     source, frequency, stateStorage, STREAM_STORAGE,
     FRAGMENTATION_STORAGE, FRAGMENT_STORAGE, EVENT_STORAGE,

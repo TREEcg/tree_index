@@ -1,13 +1,13 @@
 import express = require("express");
 import asyncHandler = require("express-async-handler");
-const path = require('path');
+import path = require("path");
 import { Worker } from "worker_threads";
 import { FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import EventStream from "../entities/EventStream";
 import Fragmentation from "../entities/Fragmentation";
 import FragmentKind from "../entities/FragmentKind";
-import loadProperties from "../util/loadProperties";
+import loadProperties, { getShowValue } from "../util/loadProperties";
 
 const router = express.Router();
 
@@ -108,9 +108,17 @@ router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
         throw new Error("Fragment name is missing");
     }
 
-    const prop = req.body.property;
+    let prop = req.body.property;
     if (!prop) {
         throw new Error("Property URI is missing");
+    } else if (!(prop instanceof Array)) {
+        // make it an array if needed
+        prop = [prop];
+    }
+
+    let propertyLabel = req.body.propertyLabel;
+    if (!propertyLabel) {
+        propertyLabel = getShowValue(prop);
     }
 
     const strategy = req.body.strategy;
@@ -124,7 +132,8 @@ router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
     const fragmentation = new Fragmentation(
         stream.sourceURI,
         name,
-        [prop],
+        prop,
+        propertyLabel,
         strategy,
         req.body,
         EntityStatus.LOADING,

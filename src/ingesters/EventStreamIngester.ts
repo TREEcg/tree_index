@@ -3,17 +3,17 @@ import N3 = require("n3");
 
 import { NamedNode, Quad } from "rdf-js";
 import BucketStrategy from "../buckets/BucketStrategy";
+import { LOGGER } from "../config";
+import EntityStatus from "../entities/EntityStatus";
 import RDFEvent from "../entities/Event";
 import EventStorage from "../persistence/events/EventStorage";
 import FragmentationStorage from "../persistence/fragmentations/FragmentationStorage";
 import FragmentStorage from "../persistence/fragments/FragmentStorage";
 import StateStorage from "../persistence/state/StateStorage";
-import { URI } from "../util/constants";
-import Ingester from "./Ingester";
 import EventStreamStorage from "../persistence/streams/EventStreamStorage";
-import EntityStatus from "../entities/EntityStatus";
+import { URI } from "../util/constants";
 import createStrategy from "../util/createStrategy";
-import { LOGGER } from "../config";
+import Ingester from "./Ingester";
 
 export default class EventStreamIngester extends Ingester {
     protected previousData: Quad[] | undefined;

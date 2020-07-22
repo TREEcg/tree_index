@@ -25,6 +25,7 @@ app.use("/streams", adminRoutes);
 // errors
 app.use((err: any, req, res, next) => {
     res.status(err.status || 500);
+    LOGGER.error(err); 
     res.json({ status: "failure", msg: err.message });
 });
 

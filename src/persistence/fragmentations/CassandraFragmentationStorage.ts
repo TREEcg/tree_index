@@ -1,6 +1,5 @@
 import cassandra = require("cassandra-driver");
 import Fragmentation from "../../entities/Fragmentation";
-import StateStorage from "../state/StateStorage";
 import { URI } from "../../util/constants";
 import FragmentationStorage from "./FragmentationStorage";
 
@@ -21,6 +20,7 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
                 r.streamid,
                 r.name,
                 r.shaclpath,
+                r.propertyLabel,
                 r.kind,
                 JSON.parse(r.params),
                 r.status,
@@ -37,6 +37,7 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
                 r.streamid,
                 r.name,
                 r.shaclpath,
+                r.propertylabel,
                 r.kind,
                 JSON.parse(r.params),
                 r.status,
@@ -45,12 +46,13 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
     }
 
     public async add(fragmentation: Fragmentation): Promise<void> {
-        const base = `INSERT INTO proto.fragmentations_by_stream (streamID, name, shaclPath, kind, params, status)
-                      VALUES (?, ?, ?, ?, ?, ?)`;
+        const base = `INSERT INTO proto.fragmentations_by_stream (streamID, name, shaclPath, propertyLabel, kind, params, status)
+                      VALUES (?, ?, ?, ?, ?, ?, ?)`;
         const params = [
             fragmentation.streamID,
             fragmentation.name,
             fragmentation.shaclPath,
+            fragmentation.propertyLabel,
             fragmentation.kind,
             JSON.stringify(fragmentation.params),
             fragmentation.status,

@@ -79,7 +79,7 @@ function combine(features, nodes, properties) {
  * @param url_list
  * @returns {string}: name for the parameter
  */
-function getShowValue(urlList) {
+export function getShowValue(urlList) {
     let returnValue = "";
     // Get parameter from every URI and combine them
     urlList.reverse().forEach((url) => {

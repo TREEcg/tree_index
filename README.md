@@ -55,6 +55,7 @@ CREATE TABLE proto.fragmentations_by_stream (
   streamID text, 
   name text,
   shaclPath frozen<list<text>>,
+  propertyLabel text,
   kind text,
   params text,
   status text,
