@@ -1,6 +1,6 @@
 # Requirements
 
-1. [Node.js](https://nodejs.org/en/)
+1. [Node.js](https://nodejs.org/en/): at least v12.18.2, tested on v14.5.0
 2. [Typescript](https://www.typescriptlang.org/)
 3. [Docker](https://www.docker.com/)
 
@@ -20,7 +20,7 @@ You'll have to limit the amount of logical cores using `--smp`, e.g.:
 
 `docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --memory 8G`
 
-Or 
+Or if the container's already running:
 
 `docker update update some-scylla --memory-swap 8G --memory 8G`
 
