@@ -3,6 +3,7 @@ import express = require("express");
 import expressPino = require("express-pino-logger");
 import { LOGGER } from "./config";
 import adminRoutes from "./routes/admin";
+import dataRoutes from "./routes/data";
 
 const expressLogger = expressPino({ LOGGER });
 const app = express();
@@ -21,6 +22,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/streams", adminRoutes);
+app.use("/data", dataRoutes);
 
 // errors
 app.use((err: any, req, res, next) => {

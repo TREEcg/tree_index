@@ -1,10 +1,9 @@
 import factory = require("@rdfjs/data-model");
 import ldfetch = require("ldfetch");
 import N3 = require("n3");
-import { BlankNode } from "n3";
 import Queue = require("queue-fifo");
 
-import { NamedNode, Quad } from "rdf-js";
+import { BlankNode, NamedNode, Quad } from "rdf-js";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 
@@ -126,12 +125,12 @@ export default abstract class Ingester {
     protected skolemize(source: URI, quad: Quad) {
         if (quad.subject.termType === "BlankNode") {
             if (quad.subject.value.indexOf("://") < 0) {
-                quad.subject.value += source;
+                quad.subject.value = `urn:${source}:${quad.subject.value}`;
             }
         }
         if (quad.object.termType === "BlankNode") {
             if (quad.object.value.indexOf("://") < 0) {
-                quad.object.value += source;
+                quad.object.value = `urn:${source}:${quad.object.value}`;
             }
         }
 
@@ -142,8 +141,10 @@ export default abstract class Ingester {
         const data: Quad[] = [];
         const done: Set<URI> = new Set(); // to avoid cycles
         done.add(id);
-        const queue: Queue<NamedNode | N3.BlankNode> = new Queue();
+
+        const queue: Queue<NamedNode | BlankNode> = new Queue();
         queue.enqueue(factory.namedNode(id));
+        queue.enqueue(factory.blankNode(id));
 
         while (!queue.isEmpty()) {
             const currentNode = queue.dequeue();

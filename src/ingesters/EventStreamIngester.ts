@@ -1,7 +1,7 @@
 import factory = require("@rdfjs/data-model");
 import N3 = require("n3");
 
-import { NamedNode, Quad } from "rdf-js";
+import { NamedNode, Quad, BlankNode, Quad_Object } from "rdf-js";
 import BucketStrategy from "../buckets/BucketStrategy";
 import { LOGGER } from "../config";
 import EntityStatus from "../entities/EntityStatus";
@@ -74,18 +74,26 @@ export default class EventStreamIngester extends Ingester {
 
         // these members are new
         const memberPred = factory.namedNode("https://w3id.org/tree#member");
-        const members: NamedNode[] = store.getQuads(null, memberPred, null, null)
-            .map((q: Quad) => q.object)
-            .filter((o) => o.termType === "NamedNode") as NamedNode[];
+        const members: Quad_Object[] = store.getQuads(null, memberPred, null, null)
+            .map((q: Quad) => q.object);
 
         // in case any new fragmentations have been added recently
         await this.refreshStrategies();
 
         // process as self-contained objects
         const objects = members.map((m) => this.buildEvent(m.value, store));
-        objects
-            .filter((o) => o !== undefined) // filter out broken events
-            .forEach((e) => this.processEvent(e as RDFEvent));
+        let i  = 0;
+        for (const e of objects) {
+            // filter out broken events
+            if (e !== undefined) {
+                i += 1;
+                // write with backpressure
+                const p = this.processEvent(e as RDFEvent).then(() => i--);
+                if (i > 10) {
+                    await p;
+                }
+            }
+        }
 
         // check if this page is full
         const nextPage = await this.findNextPage(store);
@@ -107,11 +115,11 @@ export default class EventStreamIngester extends Ingester {
         return true;
     }
 
-    public processEvent(event: RDFEvent) {
+    public async processEvent(event: RDFEvent) {
         this.eventStorage.add(this.sourceURI, event);
         for (const strategy of this.bucketStrategies.values()) {
-            for (const bucket of strategy.labelObject(event)) {
-                this.eventStorage.addToBucket(this.sourceURI, strategy.fragmentName, bucket.value, event);
+            for (const b of strategy.labelObject(event)) {
+                await this.eventStorage.addToBucket(b.streamID, b.fragmentName, b.value, event);
             }
         }
     }
@@ -130,7 +138,7 @@ export default class EventStreamIngester extends Ingester {
         const data = await this.fetchPage(await this.getCurrentPage());
         const finished = await this.processPage(data);
         // fetch 10 times faster if there are more pages
-        const delay = finished ? this.frequency : this.frequency / 10;
+        const delay = finished ? this.frequency : 2 * 1000;
         const self = this;
         setTimeout(() => self.tick(), delay);
     }

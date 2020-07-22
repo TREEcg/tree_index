@@ -14,9 +14,51 @@ export default class CassandraEventStorage extends EventStorage {
         this.client = client;
     }
 
-    public async* getAllByStream(streamID: string): AsyncGenerator<RDFEvent> {
-        const base = "SELECT * FROM proto.events_by_stream WHERE streamID = ?;";
-        const emitter = this.client.stream(base, [streamID], { prepare: true });
+    public async* getAllByStream(streamID: string, sinceDate?: string): AsyncGenerator<RDFEvent> {
+        let emitter;
+        if (!sinceDate) {
+            const base = "SELECT * FROM proto.events_by_stream WHERE streamID = ?;";
+            emitter = this.client.stream(base, [streamID], { prepare: true });
+        } else {
+            const base = `SELECT * FROM proto.events_by_stream WHERE streamID = ? and eventTime >= ?;
+                        `;
+            emitter = this.client.stream(
+                base,
+                [streamID, sinceDate],
+                { prepare: true },
+            );
+        }
+
+        const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
+
+        for await (const r of baseGenerator) {
+            yield new RDFEvent(
+                (r as any).eventid,
+                JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
+                (r as any).eventtime,
+            );
+        }
+    }
+
+    public async* getLimitedByStream(
+        streamID: string,
+        limit = 1000,
+        sinceDate?: string,
+    ): AsyncGenerator<RDFEvent> {
+        let emitter;
+        if (!sinceDate) {
+            const base = "SELECT * FROM proto.events_by_stream WHERE streamID = ? LIMIT ?;";
+            emitter = this.client.stream(base, [streamID, limit], { prepare: true });
+        } else {
+            const base = `SELECT * FROM proto.events_by_stream WHERE streamID = ? and eventTime >= ? LIMIT ?;
+                        `;
+            emitter = this.client.stream(
+                base,
+                [streamID, sinceDate, limit],
+                { prepare: true },
+            );
+        }
+
         const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
 
         for await (const r of baseGenerator) {
@@ -32,11 +74,24 @@ export default class CassandraEventStorage extends EventStorage {
         streamID: string,
         fragmentName: string,
         bucketValue: string,
+        sinceDate?: string,
     ): AsyncGenerator<RDFEvent> {
-        const base = `SELECT * FROM proto.events_by_bucket
-                      WHERE streamID = ? and fragmentName = ? and bucketValue = ? LIMIT 1000;
-                      `;
-        const emitter = this.client.stream(base, [streamID, fragmentName, bucketValue], { prepare: true });
+        let emitter;
+        if (!sinceDate) {
+            const base = `SELECT * FROM proto.events_by_bucket
+                          WHERE streamID = ? and fragmentName = ? and bucketValue = ?;
+                        `;
+            emitter = this.client.stream(base, [streamID, fragmentName, bucketValue], { prepare: true });
+        } else {
+            const base = `SELECT * FROM proto.events_by_bucket
+                          WHERE streamID = ? and fragmentName = ? and bucketValue = ? and eventTime >= ?;
+                        `;
+            emitter = this.client.stream(
+                base,
+                [streamID, fragmentName, bucketValue, sinceDate],
+                { prepare: true },
+            );
+        }
         const baseGenerator = fromEmitter(emitter, { onNext: "data", onDone: "end" });
 
         for await (const r of baseGenerator) {

@@ -6,6 +6,7 @@ import ShaclProperty from "./ShaclProperty";
 export default class EventStream {
     public sourceURI: URI;
     public name: string;
+    public timeProperty: URI[];
     public properties: ShaclProperty[];
     public status: EntityStatus;
     public fragmentations: Fragmentation[] | undefined;
@@ -13,11 +14,13 @@ export default class EventStream {
     constructor(
         source: URI,
         name: string,
+        timeProperty: URI[],
         properties: ShaclProperty[],
         status: EntityStatus,
     ) {
         this.sourceURI = source;
         this.name = name;
+        this.timeProperty = timeProperty;
         this.properties = properties;
         this.status = status;
     }

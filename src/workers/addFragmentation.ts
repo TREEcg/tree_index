@@ -10,13 +10,21 @@ const storage = EVENT_STORAGE;
 async function doStuff() {
     const bucketStrategy = createStrategy(fragmentation);
     let i = 0;
+
     for await (const event of storage.getAllByStream(fragmentation.streamID)) {
-        await Promise.all(bucketStrategy.labelObject(event).map((b) => {
-            return storage.addToBucket(b.streamID, b.fragmentName, b.value, event);
-        }));
+        // write with backpressure
+        let inFlight = 0;
+        for (const b of bucketStrategy.labelObject(event)) {
+            const p = storage.addToBucket(b.streamID, b.fragmentName, b.value, event)
+                .then(() => inFlight--);
+            if (inFlight > 10) {
+                await p;
+            }
+        }
         i++;
 
         if (i % 1000 === 0) {
+            console.log(i)
             LOGGER.info(`${fragmentation.streamID} - ${fragmentation.name} processed ${i} events`);
         }
     }

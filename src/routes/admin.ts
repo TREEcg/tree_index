@@ -44,7 +44,12 @@ router.post("/", asyncHandler(async (req, res) => {
     }
 
     const properties = await loadProperties(source);
-    const stream = new EventStream(source, name, properties, EntityStatus.LOADING);
+    let timeProperty = ["http://www.w3.org/ns/prov#generatedAtTime"];
+    if (source === "https://streams.datapiloten.be/observations") {
+        // FIXME, this shouldn't be hard coded
+        timeProperty = ["http://www.w3.org/ns/sosa/resultTime"];
+    }
+    const stream = new EventStream(source, name, timeProperty, properties, EntityStatus.LOADING);
     await STREAM_STORAGE.add(stream);
 
     if (!existingStreamID || existingStreamName) {
