@@ -25,12 +25,12 @@ export default class CassandraEventStreamStorage extends EventStreamStorage {
         const results = await this.client.execute(base, [uri], { prepare: true });
 
         for (const r of results.rows) {
-            return new EventStream(r.streamid, r.name, r.timeproperty, r.tiJSON.parse(r.properties), r.status);
+            return new EventStream(r.streamid, r.name, r.timeproperty, JSON.parse(r.properties), r.status);
         }
     }
 
     public async getByName(name: string): Promise<EventStream | undefined> {
-        const base = "SELECT * FROM proto.streams_by_name where name = ? LIMIT ";
+        const base = "SELECT * FROM proto.streams_by_name where name = ? LIMIT 1";
         const results = await this.client.execute(base, [name], { prepare: true });
 
         for (const r of results.rows) {

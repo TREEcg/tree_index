@@ -8,13 +8,19 @@ const fragmentation: Fragmentation = workerData.fragmentation;
 const storage = EVENT_STORAGE;
 
 async function doStuff() {
+    const startTime = new Date();
     const bucketStrategy = createStrategy(fragmentation);
     let i = 0;
 
     for await (const event of storage.getAllByStream(fragmentation.streamID)) {
+        if (new Date(event.timestamp) >= startTime) {
+            // we assume all new events are already processed
+            break;
+        }
         // write with backpressure
         let inFlight = 0;
         for (const b of bucketStrategy.labelObject(event)) {
+            inFlight++;
             const p = storage.addToBucket(b.streamID, b.fragmentName, b.value, event)
                 .then(() => inFlight--);
             if (inFlight > 10) {
@@ -24,7 +30,6 @@ async function doStuff() {
         i++;
 
         if (i % 1000 === 0) {
-            console.log(i)
             LOGGER.info(`${fragmentation.streamID} - ${fragmentation.name} processed ${i} events`);
         }
     }

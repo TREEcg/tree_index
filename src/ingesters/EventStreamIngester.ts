@@ -82,7 +82,7 @@ export default class EventStreamIngester extends Ingester {
 
         // process as self-contained objects
         const objects = members.map((m) => this.buildEvent(m.value, store));
-        let i  = 0;
+        let i = 0;
         for (const e of objects) {
             // filter out broken events
             if (e !== undefined) {
@@ -137,7 +137,6 @@ export default class EventStreamIngester extends Ingester {
         LOGGER.info(`Fetching ${await this.getCurrentPage()}`);
         const data = await this.fetchPage(await this.getCurrentPage());
         const finished = await this.processPage(data);
-        // fetch 10 times faster if there are more pages
         const delay = finished ? this.frequency : 2 * 1000;
         const self = this;
         setTimeout(() => self.tick(), delay);
@@ -168,12 +167,19 @@ export default class EventStreamIngester extends Ingester {
 
     protected buildEvent(id: URI, store: N3.Store): RDFEvent | undefined {
         const object = this.buildObject(id, store);
+
+        let level = 0;
+        while (Math.floor(Math.random() * Math.floor(250)) === 0) {
+            // skip list with very low probabilities
+            level += 1;
+        }
+
         for (const quad of object.data) {
             if (quad.subject.value === id
                 && quad.object.termType === "Literal"
                 && quad.object.datatype.value === "http://www.w3.org/2001/XMLSchema#dateTime"
             ) {
-                return new RDFEvent(object.id, object.data, quad.object.value);
+                return new RDFEvent(object.id, object.data, quad.object.value, level);
             }
         }
     }

@@ -33,11 +33,14 @@ Start a `cqlsh` session:
 And execute these statements:
 
 ```
+DROP KEYSPACE IF EXISTS proto;
+
 CREATE KEYSPACE proto WITH replication = {'class':'SimpleStrategy', 'replication_factor' : 1};
 
 CREATE TABLE proto.streams ( 
   streamID text, 
   name text,
+  timeProperty frozen<list<text>>,
   properties text,
   status text,
   PRIMARY KEY (streamID),
@@ -46,6 +49,7 @@ CREATE TABLE proto.streams (
 CREATE TABLE proto.streams_by_name ( 
   streamID text, 
   name text,
+  timeProperty frozen<list<text>>,
   properties text,
   status text,
   PRIMARY KEY (name),
@@ -77,16 +81,22 @@ CREATE TABLE proto.events_by_bucket (
   eventID text,
   eventData text,
   eventTime timestamp,
+  level smallint,
   PRIMARY KEY ((streamID, fragmentName, bucketValue), eventTime, eventID)
 ) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
+
+CREATE INDEX ON proto.events_by_bucket ( level );
 
 CREATE TABLE proto.events_by_stream ( 
   streamID text, 
   eventTime timestamp,
   eventID text,
   eventData text,
+  level smallint,
   PRIMARY KEY (streamID, eventTime, eventID)
 ) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
+
+CREATE INDEX ON proto.events_by_stream ( level );
 
 CREATE TABLE proto.state ( 
   key text, 

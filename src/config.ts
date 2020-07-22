@@ -18,7 +18,7 @@ class Singleton {
                 contactPoints: ["172.17.0.2:9042"],
                 localDataCenter: "datacenter1",
                 pooling: {
-                    maxRequestsPerConnection: 2048,
+                    maxRequestsPerConnection: 4000,
                     coreConnectionsPerHost: {
                         [distance.local]: 2,
                         [distance.remote]: 1,

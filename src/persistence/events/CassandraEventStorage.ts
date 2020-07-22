@@ -36,6 +36,7 @@ export default class CassandraEventStorage extends EventStorage {
                 (r as any).eventid,
                 JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
+                (r as any).level,
             );
         }
     }
@@ -66,6 +67,7 @@ export default class CassandraEventStorage extends EventStorage {
                 (r as any).eventid,
                 JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
+                (r as any).level,
             );
         }
     }
@@ -99,6 +101,7 @@ export default class CassandraEventStorage extends EventStorage {
                 (r as any).eventid,
                 JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
+                (r as any).level,
             );
         }
     }
@@ -134,6 +137,7 @@ export default class CassandraEventStorage extends EventStorage {
                 (r as any).eventid,
                 JSON.parse((r as any).eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 (r as any).eventtime,
+                (r as any).level,
             );
         }
     }
@@ -147,18 +151,20 @@ export default class CassandraEventStorage extends EventStorage {
                 r.eventid,
                 JSON.parse(r.eventdata).map((q) => RdfString.stringQuadToQuad(q)),
                 r.eventtime,
+                r.level,
             );
         }
     }
 
     public async add(streamID: URI, event: RDFEvent): Promise<void> {
-        const base = `INSERT INTO proto.events_by_stream (streamID, eventId, eventData, eventTime)
-                      VALUES (?, ?, ?, ?)`;
+        const base = `INSERT INTO proto.events_by_stream (streamID, eventId, eventData, eventTime, level)
+                      VALUES (?, ?, ?, ?, ?)`;
         const params = [
             streamID,
             event.id,
             JSON.stringify(event.data.map((q) => RdfString.quadToStringQuad(q))),
             event.timestamp,
+            event.level,
         ];
         await this.client.execute(
             base,
@@ -174,8 +180,8 @@ export default class CassandraEventStorage extends EventStorage {
         bucketValue: string,
         event: RDFEvent,
     ): Promise<void> {
-        const base = `INSERT INTO proto.events_by_bucket (streamID, fragmentName, bucketValue, eventId, eventData, eventTime)
-                      VALUES (?, ?, ?, ?, ?, ?)`;
+        const base = `INSERT INTO proto.events_by_bucket (streamID, fragmentName, bucketValue, eventId, eventData, eventTime, level)
+                      VALUES (?, ?, ?, ?, ?, ?, ?)`;
         const params = [
             streamID,
             fragmentName,
@@ -183,6 +189,7 @@ export default class CassandraEventStorage extends EventStorage {
             event.id,
             JSON.stringify(event.data.map((q) => RdfString.quadToStringQuad(q))),
             event.timestamp,
+            event.level,
         ];
         await this.client.execute(
             base,
