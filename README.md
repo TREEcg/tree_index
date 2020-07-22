@@ -16,9 +16,14 @@ You'll have to limit the amount of logical cores using `--smp`, e.g.:
 
 `docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --smp 4`
 
-**Note 2**: By default, this container will consume all available memory. You can restrict its memory consumption using `--memory`, e.g.:
+**Note 2**: By default, this container will consume all available memory. You can restrict its memory consumption during creation using `--memory`, e.g.:
 
-> `docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --memory 8G`
+`docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --memory 8G`
+
+Or 
+
+`docker update update some-scylla --memory-swap 8G --memory 8G`
+
 
 ## Setting up the tables
 
@@ -169,7 +174,6 @@ Request:
 ```bash
 curl -X POST \
   http://localhost:3000/streams \
-  -H 'cache-control: no-cache' \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d 'url=https%3A%2F%2Fstreams.datapiloten.be%2Fobservations&name=observations'
 ```
@@ -189,8 +193,7 @@ Request:
 
 ```
 curl -X GET \
-  http://localhost:3000/streams/observations \
-  -H 'cache-control: no-cache'
+  http://localhost:3000/streams/observations
 ```
 
 Response:
@@ -251,8 +254,7 @@ Request:
 
 ```bash
 curl -X GET \
-  http://localhost:3000/streams/observations/fragmentations/ \
-  -H 'cache-control: no-cache'
+  http://localhost:3000/streams/observations/fragmentations/
 ```
 
 Response:
@@ -282,7 +284,6 @@ Request:
 ```bash
 curl -X POST \
   http://localhost:3000/streams/observations/fragmentations \
-  -H 'cache-control: no-cache' \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d 'name=tiles&property=http%3A%2F%2Fwww.opengis.net%2Font%2Fgeosparql%23asWKT&strategy=XYZ_TILE&minZoom=13&maxZoom=15'
 ```
@@ -302,8 +303,7 @@ Request:
 
 ```bash
 curl -X GET \
-  http://localhost:3000/streams/observations/fragmentations/tiles \
-  -H 'cache-control: no-cache'
+  http://localhost:3000/streams/observations/fragmentations/tiles
 ```
 
 Response:
@@ -331,7 +331,6 @@ Request:
 ```bash
 curl -X POST \
   http://localhost:3000/streams/observations/fragmentations/tiles/enable \
-  -H 'cache-control: no-cache' \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d enabled=false
 ```
