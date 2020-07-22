@@ -123,6 +123,21 @@ export default abstract class Ingester {
         }
     }
 
+    protected skolemize(source: URI, quad: Quad) {
+        if (quad.subject.termType === "BlankNode") {
+            if (quad.subject.value.indexOf("://") < 0) {
+                quad.subject.value += source;
+            }
+        }
+        if (quad.object.termType === "BlankNode") {
+            if (quad.object.value.indexOf("://") < 0) {
+                quad.object.value += source;
+            }
+        }
+
+        return quad;
+    }
+
     protected buildObject(id: URI, store: N3.Store): RDFObject {
         const data: Quad[] = [];
         const done: Set<URI> = new Set(); // to avoid cycles

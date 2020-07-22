@@ -58,6 +58,11 @@ export default class EventStreamIngester extends Ingester {
             throw new Error("AAAAAAAAAAAAAAAAAAA");
         }
 
+        const page = await this.getCurrentPage();
+        for (const q of data) {
+            this.skolemize(page, q);
+        }
+
         const store: N3.Store = new N3.Store();
         store.addQuads(data);
 
