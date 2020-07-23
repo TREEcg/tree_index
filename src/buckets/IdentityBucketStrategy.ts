@@ -10,8 +10,8 @@ export default class IdentityBucketStrategy extends BucketStrategy {
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
-        const value = this.selectValue(object);
-        if (value) {
+        const values = this.selectValues(object);
+        for (const value of values) {
             result.push(this.getBucket(value));
         }
         return result;

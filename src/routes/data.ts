@@ -9,8 +9,8 @@ const router = express.Router();
 // GET /data/:streamName/:fragmentName/:fragment
 router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
-    const fragmentName = req.params.fragmentName;
-    const fragment = req.params.fragment;
+    const fragmentName: string = req.params.fragmentName;
+    const fragment = req.params.fragment.toLowerCase();
     const since = req.query.since;
     const limit = 1000;
 
@@ -31,16 +31,15 @@ router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res)
         return;
     }
 
-    const g = EVENT_STORAGE.getLimitedByFragment(
+    const g = EVENT_STORAGE.getAllByFragment(
         stream.sourceURI,
         fragmentName,
         fragment,
-        limit,
         since,
     );
 
-    let firstTime: string | undefined;
-    let lastTime: string | undefined;
+    let firstTime: Date | undefined;
+    let lastTime: Date | undefined;
     const events: RDFEvent[] = [];
 
     for await (const event of g) {
@@ -51,7 +50,7 @@ router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res)
         lastTime = event.timestamp;
 
         events.push(event);
-        if (events.length > limit && firstTime !== event.timestamp) {
+        if (events.length > limit && firstTime?.toISOString() !== lastTime.toISOString()) {
             break;
         }
     }
@@ -84,14 +83,13 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
         return;
     }
 
-    const g = EVENT_STORAGE.getLimitedByStream(
+    const g = EVENT_STORAGE.getAllByStream(
         stream.sourceURI,
-        limit,
         since,
     );
 
-    let firstTime: string | undefined;
-    let lastTime: string | undefined;
+    let firstTime: Date | undefined;
+    let lastTime: Date | undefined;
     const events: RDFEvent[] = [];
 
     for await (const event of g) {
@@ -102,7 +100,7 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
         lastTime = event.timestamp;
 
         events.push(event);
-        if (events.length > limit && firstTime !== event.timestamp) {
+        if (events.length >= limit && firstTime?.toISOString() !== lastTime.toISOString()) {
             break;
         }
     }

@@ -15,9 +15,8 @@ export default class NGramBucketStrategy extends BucketStrategy {
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
-        const value = this.selectValue(object);
-
-        if (value) {
+        const values = this.selectValues(object);
+        for (const value of values) {
             for (let length = this.minLength; length <= this.maxLength; length++) {
                 for (let i = 0; i <= value.length - length; i++) {
                     const ngram = value.substr(i, length);
@@ -30,6 +29,7 @@ export default class NGramBucketStrategy extends BucketStrategy {
     }
 
     protected getBucket(value: string): Bucket {
+        value = value.toLowerCase();
         if (!this.buckets.has(value)) {
             const bucket = new Bucket(this.streamID, this.fragmentName, value);
             this.buckets.set(value, bucket);

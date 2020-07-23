@@ -13,9 +13,8 @@ export default class TimeIntervalBucketStrategy extends BucketStrategy {
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
-        const value = this.selectValue(object);
-
-        if (value) {
+        const values = this.selectValues(object);
+        for (const value of values) {
             const date = new Date(value);
             const bucketTimestamp = date.getTime() - (date.getTime() % this.interval);
             result.push(this.getBucket(bucketTimestamp.toString()));

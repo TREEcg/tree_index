@@ -31,7 +31,7 @@ export default class CassandraFragmentStorage extends BucketStorage {
                       SET count = count + 1
                       WHERE streamID = ? and fragmentName = ? and value = ?;
                      `;
-        const params = [fragment.streamID, fragment.fragmentName, fragment.value];
+        const params = [fragment.streamID, fragment.fragmentName, fragment.value.toLowerCase()];
         await this.client.execute(
             base,
             params,

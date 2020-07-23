@@ -81,22 +81,33 @@ CREATE TABLE proto.events_by_bucket (
   eventID text,
   eventData text,
   eventTime timestamp,
-  level smallint,
-  PRIMARY KEY ((streamID, fragmentName, bucketValue), eventTime, eventID)
+  PRIMARY KEY ((bucketValue, fragmentName, streamID), eventTime, eventID)
 ) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
-
-CREATE INDEX ON proto.events_by_bucket ( level );
 
 CREATE TABLE proto.events_by_stream ( 
   streamID text, 
   eventTime timestamp,
   eventID text,
   eventData text,
-  level smallint,
   PRIMARY KEY (streamID, eventTime, eventID)
 ) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
 
-CREATE INDEX ON proto.events_by_stream ( level );
+CREATE TABLE proto.event_levels_by_stream ( 
+  streamID text, 
+  eventID text,
+  eventTime timestamp,
+  eventLevel text,
+  PRIMARY KEY ((streamID, eventLevel), eventTime, eventID)
+) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
+
+CREATE TABLE proto.event_levels_by_fragmentation ( 
+  streamID text, 
+  fragmentName text,
+  eventID text,
+  eventTime timestamp,
+  eventLevel text,
+  PRIMARY KEY ((streamID, fragmentName, eventLevel), eventTime, eventID)
+) WITH CLUSTERING ORDER BY (eventTime ASC, eventID ASC);
 
 CREATE TABLE proto.state ( 
   key text, 

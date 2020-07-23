@@ -1,11 +1,12 @@
 import { workerData } from "worker_threads";
-import { EVENT_STORAGE, FRAGMENTATION_STORAGE, LOGGER } from "../config";
+import { EVENT_STORAGE, FRAGMENTATION_STORAGE, LOGGER, FRAGMENT_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import Fragmentation from "../entities/Fragmentation";
 import createStrategy from "../util/createStrategy";
 
 const fragmentation: Fragmentation = workerData.fragmentation;
 const storage = EVENT_STORAGE;
+const fragmentStorage = FRAGMENT_STORAGE;
 
 async function doStuff() {
     const startTime = new Date();
@@ -20,9 +21,10 @@ async function doStuff() {
         // write with backpressure
         let inFlight = 0;
         for (const b of bucketStrategy.labelObject(event)) {
-            inFlight++;
+            inFlight += 2;
             const p = storage.addToBucket(b.streamID, b.fragmentName, b.value, event)
                 .then(() => inFlight--);
+            fragmentStorage.add(b).then(() => inFlight--);
             if (inFlight > 10) {
                 await p;
             }

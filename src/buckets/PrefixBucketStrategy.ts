@@ -10,9 +10,8 @@ export default class PrefixBucketStrategy extends BucketStrategy {
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
-        const value = this.selectValue(object);
-
-        if (value) {
+        const values = this.selectValues(object);
+        for (const value of values) {
             for (let i = 1; i <= value.length; i++) {
                 const prefix = value.substr(0, i);
                 result.push(this.getBucket(prefix));
@@ -23,6 +22,7 @@ export default class PrefixBucketStrategy extends BucketStrategy {
     }
 
     protected getBucket(value: string): Bucket {
+        value = value.toLowerCase();
         if (!this.buckets.has(value)) {
             const bucket = new Bucket(this.streamID, this.fragmentName, value);
             this.buckets.set(value, bucket);

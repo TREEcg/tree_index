@@ -16,9 +16,8 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
 
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
-        const value = this.selectValue(object);
-
-        if (value) {
+        const values = this.selectValues(object);
+        for (const value of values) {
             const geojson = wkt.parse(value);
             const [minLon, minLat, maxLon, maxLat] = (geojson.bbox as any)();
             for (let zoom = this.minZoom; zoom <= this.maxZoom; zoom++) {

@@ -3,12 +3,10 @@ import { URI } from "../util/constants";
 import RDFObject from "./RDFObject";
 
 export default class RDFEvent extends RDFObject {
-    public timestamp: string;
-    public level: number;
+    public timestamp: Date;
 
-    constructor(id: URI, data: Quad[], timestamp: string, level: number) {
+    constructor(id: URI, data: Quad[], timestamp: Date) {
         super(id, data);
         this.timestamp = timestamp;
-        this.level = level;
     }
 }

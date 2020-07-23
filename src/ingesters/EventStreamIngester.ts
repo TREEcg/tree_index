@@ -120,8 +120,17 @@ export default class EventStreamIngester extends Ingester {
         for (const strategy of this.bucketStrategies.values()) {
             for (const b of strategy.labelObject(event)) {
                 await this.eventStorage.addToBucket(b.streamID, b.fragmentName, b.value, event);
+                await this.fragmentStorage.add(b);
             }
         }
+
+        let level = 0;
+        while (Math.floor(Math.random() * Math.floor(250)) === 0) {
+            // skip list with very low probabilities
+            level += 1;
+        }
+
+        // add levels
     }
 
     public async refreshStrategies(): Promise<void> {
@@ -168,18 +177,12 @@ export default class EventStreamIngester extends Ingester {
     protected buildEvent(id: URI, store: N3.Store): RDFEvent | undefined {
         const object = this.buildObject(id, store);
 
-        let level = 0;
-        while (Math.floor(Math.random() * Math.floor(250)) === 0) {
-            // skip list with very low probabilities
-            level += 1;
-        }
-
         for (const quad of object.data) {
             if (quad.subject.value === id
                 && quad.object.termType === "Literal"
                 && quad.object.datatype.value === "http://www.w3.org/2001/XMLSchema#dateTime"
             ) {
-                return new RDFEvent(object.id, object.data, quad.object.value, level);
+                return new RDFEvent(object.id, object.data, new Date(quad.object.value));
             }
         }
     }

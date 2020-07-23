@@ -18,13 +18,11 @@ export default abstract class BucketStrategy {
 
     public abstract labelObject(object: RDFObject): Bucket[];
 
-    protected selectValue(object: RDFObject): string | undefined {
+    protected selectValues(object: RDFObject): string[] {
         // naive approach for now
         // assumes the final property is enough to find the correct value
         const property = this.shaclPath[this.shaclPath.length - 1];
         const matches = object.data.filter((q) => q.predicate.value === property);
-        if (matches.length) {
-            return matches[0].object.value;
-        }
+        return matches.map((m) => m.object.value);
     }
 }
