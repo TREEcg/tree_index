@@ -1,5 +1,6 @@
 import Fragment from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
+import FragmentChain from "../entities/FragmentChain";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
@@ -9,15 +10,12 @@ export default class PrefixBucketStrategy extends BucketStrategy {
         super(fragmentation);
     }
 
-    public labelObject(object: RDFObject): Fragment[] {
-        const result: Fragment[] = [];
+    public labelObject(object: RDFObject): FragmentChain[] {
+        const result: FragmentChain[] = [];
         const values = this.selectValues(object);
         const type = this.selectDataType(object);
         for (const value of values) {
-            for (let i = 1; i <= value.length; i++) {
-                const prefix = value.substr(0, i);
-                result.push(this.getBucket(prefix, type));
-            }
+            result.push(...this.help(type, value, 2));
         }
 
         return result;
@@ -25,16 +23,6 @@ export default class PrefixBucketStrategy extends BucketStrategy {
 
     public getRelationType(): URI {
         return "https://w3id.org/tree#PrefixRelation";
-    }
-
-    public async filterIndexFragments(input: AsyncGenerator<Fragment>): Promise<Fragment[]> {
-        const useful: Fragment[] = [];
-        for await (const frag of input) {
-            if (frag.value.length <= 2) {
-                useful.push(frag);
-            }
-        }
-        return useful;
     }
 
     protected getBucket(value: string, type: string): Fragment {
@@ -45,5 +33,15 @@ export default class PrefixBucketStrategy extends BucketStrategy {
         }
 
         return this.buckets.get(value) as Fragment;
+    }
+
+    private help(dataType: string, value: string, end: number): FragmentChain[] {
+        if (end > value.length) {
+            return [];
+        }
+        const children = this.help(dataType, value, end + 1);
+        const prefix = value.substr(0, end);
+        const fragment = this.getBucket(prefix, dataType);
+        return [new FragmentChain(fragment, children)];
     }
 }

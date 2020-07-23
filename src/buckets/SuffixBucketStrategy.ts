@@ -1,5 +1,6 @@
 import Fragment from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
+import FragmentChain from "../entities/FragmentChain";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
@@ -9,15 +10,12 @@ export default class SuffixBucketStrategy extends BucketStrategy {
         super(fragmentation);
     }
 
-    public labelObject(object: RDFObject): Fragment[] {
-        const result: Fragment[] = [];
+    public labelObject(object: RDFObject): FragmentChain[] {
+        const result: FragmentChain[] = [];
         const values = this.selectValues(object);
         const type = this.selectDataType(object);
         for (const value of values) {
-            for (let i = 0; i < value.length; i++) {
-                const suffix = value.substring(i);
-                result.push(this.getBucket(suffix, type));
-            }
+            result.push(...this.help(type, value, value.length - 2));
         }
 
         return result;
@@ -25,16 +23,6 @@ export default class SuffixBucketStrategy extends BucketStrategy {
 
     public getRelationType(): URI {
         return "https://w3id.org/tree#SubstringRelation";
-    }
-
-    public async filterIndexFragments(input: AsyncGenerator<Fragment>): Promise<Fragment[]> {
-        const useful: Fragment[] = [];
-        for await (const frag of input) {
-            if (frag.value.length <= 2) {
-                useful.push(frag);
-            }
-        }
-        return useful;
     }
 
     protected getBucket(value: string, type: string): Fragment {
@@ -45,5 +33,15 @@ export default class SuffixBucketStrategy extends BucketStrategy {
         }
 
         return this.buckets.get(value) as Fragment;
+    }
+
+    private help(dataType: string, value: string, begin: number): FragmentChain[] {
+        if (begin < 0) {
+            return [];
+        }
+        const children = this.help(dataType, value, begin - 1);
+        const suffix = value.substring(begin);
+        const fragment = this.getBucket(suffix, dataType);
+        return [new FragmentChain(fragment, children)];
     }
 }

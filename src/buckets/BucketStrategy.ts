@@ -1,6 +1,6 @@
 import Bucket from "../entities/Fragment";
-import Fragment from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
+import FragmentChain from "../entities/FragmentChain";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 
@@ -18,9 +18,8 @@ export default abstract class BucketStrategy {
         this.fragmentName = fragmentation.name;
     }
 
-    public abstract labelObject(object: RDFObject): Bucket[];
+    public abstract labelObject(object: RDFObject): FragmentChain[];
     public abstract getRelationType(): URI;
-    public abstract filterIndexFragments(input: AsyncGenerator<Fragment>): Promise<Fragment[]>;
 
     protected selectValues(object: RDFObject): string[] {
         // naive approach for now

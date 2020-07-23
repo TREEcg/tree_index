@@ -10,13 +10,13 @@ import createStrategy from "../util/createStrategy";
 
 const router = express.Router();
 
-// GET /data/:streamName/:fragmentName/:fragment
-router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res) => {
+// GET /data/:streamName/:fragmentationName/:fragment
+router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
-    const fragmentName: string = req.params.fragmentName;
-    const fragment = req.params.fragment.toLowerCase();
+    const fragmentationName = req.params.fragmentationName;
+    const fragment = req.params.fragment;
     const since = req.query.since;
-    const limit = 1000;
+    const limit = 250;
 
     const stream = await STREAM_STORAGE.getByName(streamName);
     if (!stream) {
@@ -24,20 +24,26 @@ router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res)
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
+    const collectionURL = createCollectionURL(DOMAIN, stream.name);
+    const canonicalURL = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+    if (since) {
+        canonicalURL.searchParams.append("since", since);
+    }
+
     if (streamName !== canonicalStream?.name) {
-        let canonicalUrl: string;
-        if (since) {
-            canonicalUrl = `/data/${canonicalStream?.name}/${fragmentName}/${fragment}?since=${since}`;
-        } else {
-            canonicalUrl = `/data/${canonicalStream?.name}/${fragmentName}/${fragment}`;
-        }
-        res.redirect(301, canonicalUrl);
+        // requested this resource under a different name
+        res.redirect(301, canonicalURL);
         return;
+    }
+
+    const fragmentation = await FRAGMENTATION_STORAGE.getByName(stream.sourceURI, fragmentationName);
+    if (!fragmentation || fragmentation.status === EntityStatus.DISABLED) {
+        throw new Error("Fragmentation name is invalid");
     }
 
     const g = EVENT_STORAGE.getAllByFragment(
         stream.sourceURI,
-        fragmentName,
+        fragmentationName,
         fragment,
         since,
     );
@@ -46,6 +52,7 @@ router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res)
     let lastTime: Date | undefined;
     const events: RDFEvent[] = [];
 
+    let withNext = false;
     for await (const event of g) {
         if (!firstTime) {
             firstTime = event.timestamp;
@@ -54,21 +61,66 @@ router.get("/:streamName/:fragmentName/:fragment", asyncHandler(async (req, res)
         lastTime = event.timestamp;
 
         events.push(event);
-        if (events.length > limit && firstTime?.toISOString() !== lastTime.toISOString()) {
+        if (events.length >= 2000) {
+            // hard limit on 2000 events/page
+            // there is no next page
+            break;
+        } else if (events.length >= limit && firstTime?.toISOString() !== lastTime.toISOString()) {
+            // we stopped because the page is full
+            // not because we ran out of data
+            withNext = true;
             break;
         }
     }
 
     const quads = events.flatMap((e) => e.data);
-    const doc = await jsonld.fromRDF(quads);
-    res.json(doc);
+    const payload: any[] = await jsonld.fromRDF(quads);
+    payload.unshift({
+        "@id": collectionURL,
+        "https://w3id.org/tree#view": canonicalURL,
+        "https://w3id.org/tree#member": payload.map((e) => {
+            return { "@id": e["@id"] };
+        }),
+    });
+
+    const relations: any[] = [];
+    const strategy = createStrategy(fragmentation);
+    const fragmentGen = FRAGMENT_STORAGE.getRelationsByFragment(stream.sourceURI, fragmentationName, fragment);
+    for await (const frag of fragmentGen) {
+        relations.push({
+            "@type": strategy.getRelationType(),
+            "https://w3id.org/tree#node": {
+                "@id": createFragmentURL(DOMAIN, streamName, fragmentationName, frag.value),
+                "https://w3id.org/tree#remainingItems": frag.count,
+            },
+            "https://w3id.org/tree#path": fragmentation.shaclPath.map((p) => {
+                return { "@id": p };
+            }),
+            "https://w3id.org/tree#value": {
+                "@value": frag.value,
+                "@type": frag.dataType,
+            },
+        });
+    }
+
+    if (withNext && lastTime) {
+        const nextPath = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+        relations.push(buildNextRelation(stream, nextPath, lastTime));
+    }
+
+    const blob = {
+        "@id": canonicalURL,
+        "https://w3id.org/tree#relation": relations,
+        "@included": payload,
+    };
+
+    res.json(blob);
 }));
 
 // GET /data/:streamName/:fragmentationName
 router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const fragmentationName: string = req.params.fragmentationName;
-    const limit = 1000;
 
     const stream = await STREAM_STORAGE.getByName(streamName);
     if (!stream) {
@@ -88,13 +140,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
         throw new Error("Fragmentation name is invalid");
     }
 
-    const g = FRAGMENT_STORAGE.getAllByFragmentation(
-        stream.sourceURI,
-        fragmentationName,
-    );
-
     const strategy = createStrategy(fragmentation);
-    const fragments: Fragment[] = await strategy.filterIndexFragments(g);
 
     const payload: any[] = [];
     payload.push({
@@ -103,7 +149,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     });
 
     const relations: any[] = [];
-    for (const frag of fragments) {
+    for await (const frag of FRAGMENT_STORAGE.getRootsByFragmentation(stream.sourceURI, fragmentationName)) {
         relations.push({
             "@type": strategy.getRelationType(),
             "https://w3id.org/tree#node": {
@@ -197,14 +243,14 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     };
 
     if (!exhausted && lastTime) {
-        relations.push(buildNextRelation(stream, lastTime));
+        const nextPath = createCollectionURL(DOMAIN, stream.name);
+        relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
     res.json(blob);
 }));
 
-function buildNextRelation(stream: EventStream, time: Date) {
-    const nextURL = createCollectionURL(DOMAIN, stream.name);
+function buildNextRelation(stream: EventStream, nextURL: URL, time: Date) {
     nextURL.searchParams.append("since", time.toISOString());
     return {
         "@type": "https://w3id.org/tree#GreaterOrEqualThanRelation",

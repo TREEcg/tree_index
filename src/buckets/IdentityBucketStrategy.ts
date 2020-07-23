@@ -1,5 +1,6 @@
 import Bucket from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
+import FragmentChain from "../entities/FragmentChain";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
@@ -9,23 +10,19 @@ export default class IdentityBucketStrategy extends BucketStrategy {
         super(fragmentation);
     }
 
-    public labelObject(object: RDFObject): Bucket[] {
-        const result: Bucket[] = [];
+    public labelObject(object: RDFObject): FragmentChain[] {
+        const result: FragmentChain[] = [];
         const values = this.selectValues(object);
         const type = this.selectDataType(object);
         for (const value of values) {
-            result.push(this.getBucket(value, type));
+            const frag = this.getBucket(value, type);
+            result.push(new FragmentChain(frag, []));
         }
         return result;
     }
 
     public getRelationType(): URI {
         return "https://w3id.org/tree#EqualThanRelation";
-    }
-
-    public filterIndexFragments(input: AsyncGenerator<Bucket>): Promise<Bucket[]> {
-        // do we want to return all of them?
-        throw new Error("Method not implemented.");
     }
 
     protected getBucket(value: string, dataType: string): Bucket {

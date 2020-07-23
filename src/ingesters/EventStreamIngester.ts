@@ -14,6 +14,8 @@ import EventStreamStorage from "../persistence/streams/EventStreamStorage";
 import { URI } from "../util/constants";
 import createStrategy from "../util/createStrategy";
 import Ingester from "./Ingester";
+import Fragment from "../entities/Fragment";
+import FragmentChain from "../entities/FragmentChain";
 
 export default class EventStreamIngester extends Ingester {
     protected previousData: Quad[] | undefined;
@@ -118,9 +120,8 @@ export default class EventStreamIngester extends Ingester {
     public async processEvent(event: RDFEvent) {
         this.eventStorage.add(this.sourceURI, event);
         for (const strategy of this.bucketStrategies.values()) {
-            for (const b of strategy.labelObject(event)) {
-                await this.eventStorage.addToBucket(b.streamID, b.fragmentName, b.value, event);
-                await this.fragmentStorage.add(b);
+            for (const chain of strategy.labelObject(event)) {
+                await this.addFragmentChain(event, chain, true)
             }
         }
 
@@ -131,6 +132,18 @@ export default class EventStreamIngester extends Ingester {
         }
 
         // add levels
+    }
+
+    public async addFragmentChain(event: RDFEvent, chain: FragmentChain, first: boolean) {
+        const fragment = chain.fragment;
+        await this.eventStorage.addToBucket(fragment.streamID, fragment.fragmentName, fragment.value, event);
+        if (first) {
+            await this.fragmentStorage.addRoot(chain.fragment);
+        }
+        for (const child of chain.children) {
+            await this.fragmentStorage.addRelation(fragment, child.fragment);
+            await this.addFragmentChain(event, child, false);
+        }
     }
 
     public async refreshStrategies(): Promise<void> {

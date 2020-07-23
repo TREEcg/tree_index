@@ -66,13 +66,23 @@ CREATE TABLE proto.fragmentations_by_stream (
   PRIMARY KEY (streamID, name)
 );
 
-CREATE TABLE proto.buckets_by_fragmentation ( 
+CREATE TABLE proto.roots_by_fragmentation ( 
   streamID text, 
   fragmentName text,
-  value text,
-  count counter,
+  bucket text,
   datatype text,
-  PRIMARY KEY (streamID, fragmentName, value)
+  count counter,
+  PRIMARY KEY (streamID, fragmentName, bucket, datatype)
+);
+
+CREATE TABLE proto.relations_by_fragmentation ( 
+  streamID text, 
+  fragmentName text,
+  bucket text,
+  nextBucket text,
+  datatype text,
+  count counter,
+  PRIMARY KEY (streamID, fragmentName, bucket, nextBucket, datatype)
 );
 
 CREATE TABLE proto.events_by_bucket ( 

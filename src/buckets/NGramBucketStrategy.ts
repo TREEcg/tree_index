@@ -1,5 +1,6 @@
 import Fragment from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
+import FragmentChain from "../entities/FragmentChain";
 import RDFObject from "../entities/RDFObject";
 import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
@@ -14,16 +15,13 @@ export default class NGramBucketStrategy extends BucketStrategy {
         this.maxLength = maxLength;
     }
 
-    public labelObject(object: RDFObject): Fragment[] {
-        const result: Fragment[] = [];
+    public labelObject(object: RDFObject): FragmentChain[] {
+        const result: FragmentChain[] = [];
         const values = this.selectValues(object);
         const type = this.selectDataType(object);
         for (const value of values) {
-            for (let length = this.minLength; length <= this.maxLength; length++) {
-                for (let i = 0; i <= value.length - length; i++) {
-                    const ngram = value.substr(i, length);
-                    result.push(this.getBucket(ngram, type));
-                }
+            for (let begin = 0; begin <= value.length - this.minLength; begin++) {
+                result.push(...this.help(type, value, begin, this.minLength));
             }
         }
 
@@ -34,16 +32,6 @@ export default class NGramBucketStrategy extends BucketStrategy {
         return "https://w3id.org/tree#SubstringRelation";
     }
 
-    public async filterIndexFragments(input: AsyncGenerator<Fragment>): Promise<Fragment[]> {
-        const useful: Fragment[] = [];
-        for await (const frag of input) {
-            if (frag.value.length <= 2) {
-                useful.push(frag);
-            }
-        }
-        return useful;
-    }
-
     protected getBucket(value: string, type: string): Fragment {
         value = value.toLowerCase();
         if (!this.buckets.has(value)) {
@@ -52,5 +40,15 @@ export default class NGramBucketStrategy extends BucketStrategy {
         }
 
         return this.buckets.get(value) as Fragment;
+    }
+
+    private help(dataType: string, value: string, position: number, length: number): FragmentChain[] {
+        if (length > this.maxLength || length + position > value.length) {
+            return [];
+        }
+        const children = this.help(dataType, value, position, length + 1);
+        const ngram = value.substr(position, length);
+        const fragment = this.getBucket(ngram, dataType);
+        return [new FragmentChain(fragment, children)];
     }
 }
