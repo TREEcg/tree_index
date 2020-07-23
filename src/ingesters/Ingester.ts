@@ -133,6 +133,8 @@ export default abstract class Ingester {
                 quad.object.value = `urn:${source}:${quad.object.value}`;
             }
         }
+        // these are worthless anyway
+        quad.graph = factory.defaultGraph();
 
         return quad;
     }
