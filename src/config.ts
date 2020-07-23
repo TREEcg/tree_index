@@ -34,6 +34,7 @@ class Singleton {
     }
 }
 
+export const DOMAIN = "http://localhost:3000";
 export const LOGGER = logger;
 export const STREAM_STORAGE = new CassandraEventStreamStorage(Singleton.getCassandraClient());
 export const FRAGMENTATION_STORAGE = new CassandraFragmentationStorage(Singleton.getCassandraClient());
