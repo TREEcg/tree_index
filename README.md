@@ -71,6 +71,7 @@ CREATE TABLE proto.buckets_by_fragmentation (
   fragmentName text,
   value text,
   count counter,
+  datatype text,
   PRIMARY KEY (streamID, fragmentName, value)
 );
 

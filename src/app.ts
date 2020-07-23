@@ -27,7 +27,7 @@ app.use("/data", dataRoutes);
 // errors
 app.use((err: any, req, res, next) => {
     res.status(err.status || 500);
-    LOGGER.error(err); 
+    LOGGER.error(err);
     res.json({ status: "failure", msg: err.message });
 });
 

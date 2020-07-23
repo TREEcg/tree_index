@@ -1,5 +1,5 @@
 import { workerData } from "worker_threads";
-import { EVENT_STORAGE, FRAGMENTATION_STORAGE, LOGGER, FRAGMENT_STORAGE } from "../config";
+import { EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, LOGGER } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import Fragmentation from "../entities/Fragmentation";
 import createStrategy from "../util/createStrategy";

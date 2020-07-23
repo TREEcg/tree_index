@@ -22,6 +22,8 @@ export default class CassandraFragmentStorage extends BucketStorage {
                 (r as any).streamid,
                 (r as any).fragmentname,
                 (r as any).value,
+                (r as any).datatype,
+                (r as any).count,
             );
         }
     }
@@ -29,9 +31,9 @@ export default class CassandraFragmentStorage extends BucketStorage {
     public async add(fragment: Fragment): Promise<void> {
         const base = `UPDATE proto.buckets_by_fragmentation
                       SET count = count + 1
-                      WHERE streamID = ? and fragmentName = ? and value = ?;
+                      WHERE streamID = ? and fragmentName = ? and value = ? and datatype = ?;
                      `;
-        const params = [fragment.streamID, fragment.fragmentName, fragment.value.toLowerCase()];
+        const params = [fragment.streamID, fragment.fragmentName, fragment.value.toLowerCase(), fragment.dataType];
         await this.client.execute(
             base,
             params,

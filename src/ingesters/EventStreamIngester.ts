@@ -1,7 +1,7 @@
 import factory = require("@rdfjs/data-model");
 import N3 = require("n3");
 
-import { NamedNode, Quad, BlankNode, Quad_Object } from "rdf-js";
+import { Quad, Quad_Object } from "rdf-js";
 import BucketStrategy from "../buckets/BucketStrategy";
 import { LOGGER } from "../config";
 import EntityStatus from "../entities/EntityStatus";

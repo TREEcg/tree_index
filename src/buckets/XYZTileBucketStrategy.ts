@@ -2,6 +2,7 @@ import wkt = require("terraformer-wkt-parser");
 import Bucket from "../entities/Fragment";
 import Fragmentation from "../entities/Fragmentation";
 import RDFObject from "../entities/RDFObject";
+import { URI } from "../util/constants";
 import BucketStrategy from "./BucketStrategy";
 
 export default class XYZTileBucketStrategy extends BucketStrategy {
@@ -17,6 +18,7 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
     public labelObject(object: RDFObject): Bucket[] {
         const result: Bucket[] = [];
         const values = this.selectValues(object);
+        const type = this.selectDataType(object);
         for (const value of values) {
             const geojson = wkt.parse(value);
             const [minLon, minLat, maxLon, maxLat] = (geojson.bbox as any)();
@@ -28,7 +30,7 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
 
                 for (let tileX = minTileX; tileX <= maxTileX; tileX++) {
                     for (let tileY = minTileY; tileY <= maxTileY; tileY++) {
-                        result.push(this.getBucket(zoom, tileX, tileY));
+                        result.push(this.getBucket(zoom, tileX, tileY, type));
                     }
                 }
             }
@@ -37,10 +39,19 @@ export default class XYZTileBucketStrategy extends BucketStrategy {
         return result;
     }
 
-    protected getBucket(zoom, x, y): Bucket {
+    public getRelationType(): URI {
+        return "https://w3id.org/tree#GeospatiallyContainsRelation";
+    }
+
+    public filterIndexFragments(input: AsyncGenerator<Bucket>): Promise<Bucket[]> {
+        // return list of zoom level 4 tiles, which contain links to zoom level 8 tiles, ...
+        throw new Error("Method not implemented.");
+    }
+
+    protected getBucket(zoom, x, y, type): Bucket {
         const k = `${zoom}_${x}_${y}`;
         if (!this.buckets.has(k)) {
-            const bucket = new Bucket(this.streamID, this.fragmentName, k);
+            const bucket = new Bucket(this.streamID, this.fragmentName, k, type);
             this.buckets.set(k, bucket);
         }
 

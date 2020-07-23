@@ -8,6 +8,7 @@ import XYZTileBucketStrategy from "../buckets/XYZTileBucketStrategy";
 import Fragmentation from "../entities/Fragmentation";
 import FragmentKind from "../entities/FragmentKind";
 
+// tslint:disable: no-string-literal
 export default function createStrategy(fragmentation: Fragmentation): BucketStrategy {
     switch (fragmentation.kind) {
         case FragmentKind.IDENTITY:
