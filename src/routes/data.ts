@@ -181,6 +181,7 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const since = req.query.since;
     const limit = 250;
+    const hardLimit = 2000;
 
     const stream = await STREAM_STORAGE.getByName(streamName);
     if (!stream) {
@@ -218,7 +219,8 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
         lastTime = event.timestamp;
 
         events.push(event);
-        if (events.length >= limit && firstTime?.toISOString() !== lastTime.toISOString()) {
+        if ((events.length >= limit && firstTime?.toISOString() !== lastTime.toISOString()) ||
+            events.length >= hardLimit) {
             // we stopped because the page is full
             // not because we ran out of data
             exhausted = false;
