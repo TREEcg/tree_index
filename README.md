@@ -43,6 +43,7 @@ CREATE TABLE proto.streams (
   timeProperty frozen<list<text>>,
   properties text,
   status text,
+  progress text,
   PRIMARY KEY (streamID),
 );
 
@@ -52,6 +53,7 @@ CREATE TABLE proto.streams_by_name (
   timeProperty frozen<list<text>>,
   properties text,
   status text,
+  progress text,
   PRIMARY KEY (name),
 );
 
