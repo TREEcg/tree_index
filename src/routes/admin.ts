@@ -8,6 +8,7 @@ import EventStream from "../entities/EventStream";
 import Fragmentation from "../entities/Fragmentation";
 import FragmentKind from "../entities/FragmentKind";
 import loadProperties, { getShowValue } from "../util/loadProperties";
+import startIngester from "../util/startIngester";
 
 const router = express.Router();
 
@@ -50,20 +51,14 @@ router.post("/", asyncHandler(async (req, res) => {
         timeProperty = ["http://www.w3.org/ns/sosa/resultTime"];
     }
     const stream = new EventStream(source, name, timeProperty, properties, EntityStatus.LOADING);
+    if (existingStreamID) {
+        stream.progress = existingStreamID.progress;
+    }
     await STREAM_STORAGE.add(stream);
 
-    if (!existingStreamID || existingStreamName) {
+    if (!existingStreamID) {
         // start ingesting this stream if it is new
-        // OR resume ingesting if this stream exists with the same name
-        const workerPath = path.resolve(__dirname, "../workers/startIngester.js");
-
-        // tslint:disable-next-line: no-unused-expression
-        new Worker(workerPath, {
-            workerData: {
-                uri: source,
-                frequency: 60 * 1000, // 1 minute
-            },
-        });
+        startIngester(stream.sourceURI);
     }
 
     res.json({ status: "success", url: `/streams/${name}` });

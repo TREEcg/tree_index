@@ -85,6 +85,7 @@ export default class EventStreamIngester extends Ingester {
         // process as self-contained objects
         const objects = members.map((m) => this.buildEvent(m.value, store));
         let i = 0;
+        let latestEvent;
         for (const e of objects) {
             // filter out broken events
             if (e !== undefined) {
@@ -94,27 +95,36 @@ export default class EventStreamIngester extends Ingester {
                 if (i > 10) {
                     await p;
                 }
+
+                if (!latestEvent || e.timestamp > latestEvent) {
+                    // latest event gets stored in the progress field
+                    latestEvent = e.timestamp;
+                }
             }
         }
 
+        stream.progress.latestEvent = latestEvent;
+
         // check if this page is full
         const nextPage = await this.findNextPage(store);
-        if (nextPage) {
+        if (nextPage !== undefined) {
+            stream.progress.pages = (stream.progress.pages || 0) + 1;
             await this.setCurrentPage(nextPage);
+        } else {
+            // this was the last page
+            stream.status = EntityStatus.ENABLED;
         }
+
+        this.eventStreamStorage.add(stream);
 
         // remember which quads were just processed
         this.previousData = data;
 
-        if (nextPage) {
+        if (nextPage !== undefined) {
             return false;
+        } else {
+            return true;
         }
-
-        // this was the last page
-        stream.status = EntityStatus.ENABLED;
-        this.eventStreamStorage.add(stream);
-
-        return true;
     }
 
     public async processEvent(event: RDFEvent) {

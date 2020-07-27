@@ -1,5 +1,6 @@
 import { URI } from "../util/constants";
 import EntityStatus from "./EntityStatus";
+import EventStreamProgress from "./EventStreamProgress";
 import Fragmentation from "./Fragmentation";
 import ShaclProperty from "./ShaclProperty";
 
@@ -10,6 +11,7 @@ export default class EventStream {
     public properties: ShaclProperty[];
     public status: EntityStatus;
     public fragmentations: Fragmentation[] | undefined;
+    public progress: EventStreamProgress;
 
     constructor(
         source: URI,
@@ -23,5 +25,6 @@ export default class EventStream {
         this.timeProperty = timeProperty;
         this.properties = properties;
         this.status = status;
+        this.progress = {};
     }
 }

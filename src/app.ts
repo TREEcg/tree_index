@@ -4,6 +4,7 @@ import expressPino = require("express-pino-logger");
 import { LOGGER } from "./config";
 import adminRoutes from "./routes/admin";
 import dataRoutes from "./routes/data";
+import resumeIngesters from "./util/resumeIngesters";
 
 const expressLogger = expressPino({ LOGGER });
 const app = express();
@@ -36,3 +37,5 @@ app.set("port", process.env.PORT || 3000);
 const server = app.listen(app.get("port"), () => {
     LOGGER.debug("Express server listening on port " + server.address().port);
 });
+
+resumeIngesters();

@@ -5,7 +5,6 @@ import { DOMAIN, EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_
 import EntityStatus from "../entities/EntityStatus";
 import RDFEvent from "../entities/Event";
 import EventStream from "../entities/EventStream";
-import Fragment from "../entities/Fragment";
 import createStrategy from "../util/createStrategy";
 
 const router = express.Router();
@@ -114,7 +113,8 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
         "@included": payload,
     };
 
-    res.json(blob);
+    res.type("application/ld+json; charset=utf-8");
+    res.send(blob);
 }));
 
 // GET /data/:streamName/:fragmentationName
@@ -172,7 +172,8 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
         "@included": payload,
     };
 
-    res.json(blob);
+    res.type("application/ld+json; charset=utf-8");
+    res.send(blob);
 }));
 
 // GET /data/:streamName
@@ -247,7 +248,8 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
-    res.json(blob);
+    res.type("application/ld+json; charset=utf-8");
+    res.send(blob);
 }));
 
 function buildNextRelation(stream: EventStream, nextURL: URL, time: Date) {
