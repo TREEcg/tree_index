@@ -167,10 +167,17 @@ export default class EventStreamIngester extends Ingester {
 
     protected async tick() {
         LOGGER.info(`Fetching ${await this.getCurrentPage()}`);
-        const data = await this.fetchPage(await this.getCurrentPage());
-        const finished = await this.processPage(data);
+        let finished = false;
+        try {
+            const data = await this.fetchPage(await this.getCurrentPage());
+            finished = await this.processPage(data);
+        } catch (err) {
+            LOGGER.err(err);
+        }
+
         const delay = finished ? this.frequency : 2 * 1000;
         const self = this;
+
         setTimeout(() => self.tick(), delay);
     }
 
