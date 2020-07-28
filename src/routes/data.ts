@@ -36,7 +36,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     }
 
     const fragmentation = await FRAGMENTATION_STORAGE.getByName(stream.sourceURI, fragmentationName);
-    if (!fragmentation || fragmentation.status === EntityStatus.DISABLED) {
+    if (!fragmentation || fragmentation.status !== EntityStatus.ENABLED) {
         throw new Error("Fragmentation name is invalid");
     }
 
@@ -135,7 +135,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     }
 
     const fragmentation = await FRAGMENTATION_STORAGE.getByName(stream.sourceURI, fragmentationName);
-    if (!fragmentation || fragmentation.status === EntityStatus.DISABLED) {
+    if (!fragmentation || fragmentation.status !== EntityStatus.ENABLED) {
         throw new Error("Fragmentation name is invalid");
     }
 

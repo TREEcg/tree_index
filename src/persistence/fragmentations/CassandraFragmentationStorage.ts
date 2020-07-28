@@ -20,7 +20,7 @@ export default class CassandraFragmentationStorage extends FragmentationStorage 
                 r.streamid,
                 r.name,
                 r.shaclpath,
-                r.propertyLabel,
+                r.propertylabel,
                 r.kind,
                 JSON.parse(r.params),
                 r.status,
