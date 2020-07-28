@@ -22,6 +22,7 @@
     "es6-promise": "^4.2.8",
     "express": "^4.17.1",
     "express-async-handler": "^1.1.4",
+    "express-negotiate": "0.0.6",
     "express-pino-logger": "^5.0.0",
     "isomorphic-fetch": "^2.2.1",
     "jsonld": "^3.1.1",

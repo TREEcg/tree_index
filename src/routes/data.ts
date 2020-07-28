@@ -113,8 +113,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
         "@included": payload,
     };
 
-    res.type("application/ld+json; charset=utf-8");
-    res.send(blob);
+    sendResponse(req, res, blob);
 }));
 
 // GET /data/:streamName/:fragmentationName
@@ -172,8 +171,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
         "@included": payload,
     };
 
-    res.type("application/ld+json; charset=utf-8");
-    res.send(blob);
+    sendResponse(req, res, blob);
 }));
 
 // GET /data/:streamName
@@ -250,8 +248,7 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
-    res.type("application/ld+json; charset=utf-8");
-    res.send(blob);
+    sendResponse(req, res, blob);
 }));
 
 function buildNextRelation(stream: EventStream, nextURL: URL, time: Date) {
@@ -269,6 +266,23 @@ function buildNextRelation(stream: EventStream, nextURL: URL, time: Date) {
             "@type": "http://www.w3.org/2001/XMLSchema#dateTime",
         },
     };
+}
+
+async function sendResponse(req, res, blob) {
+    req.negotiate({
+        "application/json;q=1.1": () => {
+            res.type("application/ld+json; charset=utf-8");
+            res.send(blob);
+        },
+        "application/n-quads;q=0.9": async () => {
+            res.type("application/n-quads; charset=utf-8");
+            res.send(await jsonld.toRDF(blob, { format: "application/n-quads" }));
+        },
+        "default": () => {
+            res.type("application/ld+json; charset=utf-8");
+            res.send(blob);
+        },
+    });
 }
 
 function createCollectionURL(base: string, streamName: string): URL {
