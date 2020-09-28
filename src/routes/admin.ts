@@ -2,7 +2,7 @@ import express = require("express");
 import asyncHandler = require("express-async-handler");
 import path = require("path");
 import { Worker } from "worker_threads";
-import { FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
+import { ADMIN_DOMAIN, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import EventStream from "../entities/EventStream";
 import Fragmentation from "../entities/Fragmentation";
@@ -12,7 +12,7 @@ import startIngester from "../util/startIngester";
 
 const router = express.Router();
 
-// GET /streams
+// GET /
 router.get("/", asyncHandler(async (req, res) => {
     const streams: EventStream[] = [];
 
@@ -23,7 +23,7 @@ router.get("/", asyncHandler(async (req, res) => {
     res.json(streams);
 }));
 
-// POST /streams
+// POST /
 router.post("/", asyncHandler(async (req, res) => {
     const source = req.body.url;
     if (!source) {
@@ -61,10 +61,11 @@ router.post("/", asyncHandler(async (req, res) => {
         startIngester(stream.sourceURI);
     }
 
-    res.json({ status: "success", url: `/streams/${name}` });
+    const streamURI = new URL(`/${name}`, ADMIN_DOMAIN);
+    res.json({ status: "success", url: streamURI });
 }));
 
-// GET /streams/:streamName
+// GET /:streamName
 router.get("/:streamName", asyncHandler(async (req, res) => {
     const stream = await STREAM_STORAGE.getByName(req.params.streamName);
     if (!stream) {
@@ -80,7 +81,7 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     res.json(stream);
 }));
 
-// GET /streams/:streamName/fragmentations
+// GET /:streamName/fragmentations
 router.get("/:streamName/fragmentations", asyncHandler(async (req, res) => {
     const stream = await STREAM_STORAGE.getByName(req.params.streamName);
     if (!stream) {
@@ -95,7 +96,7 @@ router.get("/:streamName/fragmentations", asyncHandler(async (req, res) => {
     res.json(fragmentations);
 }));
 
-// POST /streams/:streamName/fragmentations
+// POST /:streamName/fragmentations
 router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const stream = await STREAM_STORAGE.getByName(streamName);
@@ -148,10 +149,11 @@ router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
         },
     });
 
-    res.json({ status: "success", url: `/streams/${streamName}/fragmentations/${name}` });
+    const fragmentURI = new URL(`/${streamName}/fragmentations/${name}`, ADMIN_DOMAIN);
+    res.json({ status: "success", url: fragmentURI });
 }));
 
-// GET /streams/:streamName/fragmentations/:fragmentName
+// GET /:streamName/fragmentations/:fragmentName
 router.get("/:streamName/fragmentations/:fragmentName", asyncHandler(async (req, res) => {
     const stream = await STREAM_STORAGE.getByName(req.params.streamName);
     if (!stream) {
@@ -166,7 +168,7 @@ router.get("/:streamName/fragmentations/:fragmentName", asyncHandler(async (req,
     res.json(fragment);
 }));
 
-// POST /streams/:streamName/fragmentations/:fragmentName/enable
+// POST /:streamName/fragmentations/:fragmentName/enable
 router.post("/:streamName/fragmentations/:fragmentName/enable", asyncHandler(async (req, res) => {
     const stream = await STREAM_STORAGE.getByName(req.params.streamName);
     if (!stream) {
