@@ -6,6 +6,7 @@ import BucketStrategy from "../buckets/BucketStrategy";
 import { LOGGER } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import RDFEvent from "../entities/Event";
+import FragmentChain from "../entities/FragmentChain";
 import EventStorage from "../persistence/events/EventStorage";
 import FragmentationStorage from "../persistence/fragmentations/FragmentationStorage";
 import FragmentStorage from "../persistence/fragments/FragmentStorage";
@@ -14,8 +15,6 @@ import EventStreamStorage from "../persistence/streams/EventStreamStorage";
 import { URI } from "../util/constants";
 import createStrategy from "../util/createStrategy";
 import Ingester from "./Ingester";
-import Fragment from "../entities/Fragment";
-import FragmentChain from "../entities/FragmentChain";
 
 export default class EventStreamIngester extends Ingester {
     protected previousData: Quad[] | undefined;
@@ -131,7 +130,7 @@ export default class EventStreamIngester extends Ingester {
         this.eventStorage.add(this.sourceURI, event);
         for (const strategy of this.bucketStrategies.values()) {
             for (const chain of strategy.labelObject(event)) {
-                await this.addFragmentChain(event, chain, true)
+                await this.addFragmentChain(event, chain, true);
             }
         }
 

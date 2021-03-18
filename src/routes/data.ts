@@ -1,7 +1,7 @@
 import express = require("express");
 import asyncHandler = require("express-async-handler");
 import jsonld = require("jsonld");
-import { DOMAIN, EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
+import { DATA_DOMAIN, EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import RDFEvent from "../entities/Event";
 import EventStream from "../entities/EventStream";
@@ -9,7 +9,7 @@ import createStrategy from "../util/createStrategy";
 
 const router = express.Router();
 
-// GET /data/:streamName/:fragmentationName/:fragment
+// GET /:streamName/:fragmentationName/:fragment
 router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const fragmentationName = req.params.fragmentationName;
@@ -23,8 +23,8 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, stream.name);
-    const canonicalURL = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+    const collectionURL = createCollectionURL(DATA_DOMAIN, stream.name);
+    const canonicalURL = createFragmentURL(DATA_DOMAIN, stream.name, fragmentationName, fragment);
     if (since) {
         canonicalURL.searchParams.append("since", since);
     }
@@ -89,7 +89,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
         relations.push({
             "@type": strategy.getRelationType(),
             "https://w3id.org/tree#node": {
-                "@id": createFragmentURL(DOMAIN, streamName, fragmentationName, frag.value),
+                "@id": createFragmentURL(DATA_DOMAIN, streamName, fragmentationName, frag.value),
                 "https://w3id.org/tree#remainingItems": frag.count,
             },
             "https://w3id.org/tree#path": fragmentation.shaclPath.map((p) => {
@@ -103,7 +103,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     }
 
     if (withNext && lastTime) {
-        const nextPath = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+        const nextPath = createFragmentURL(DATA_DOMAIN, stream.name, fragmentationName, fragment);
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
@@ -116,7 +116,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     sendResponse(req, res, blob);
 }));
 
-// GET /data/:streamName/:fragmentationName
+// GET /:streamName/:fragmentationName
 router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const fragmentationName: string = req.params.fragmentationName;
@@ -127,8 +127,8 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, streamName);
-    const canonicalURL = createFragmentationURL(DOMAIN, streamName, fragmentationName);
+    const collectionURL = createCollectionURL(DATA_DOMAIN, streamName);
+    const canonicalURL = createFragmentationURL(DATA_DOMAIN, streamName, fragmentationName);
     if (streamName !== canonicalStream?.name) {
         res.redirect(301, canonicalURL);
         return;
@@ -152,7 +152,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
         relations.push({
             "@type": strategy.getRelationType(),
             "https://w3id.org/tree#node": {
-                "@id": createFragmentURL(DOMAIN, streamName, fragmentationName, frag.value),
+                "@id": createFragmentURL(DATA_DOMAIN, streamName, fragmentationName, frag.value),
                 "https://w3id.org/tree#remainingItems": frag.count,
             },
             "https://w3id.org/tree#path": fragmentation.shaclPath.map((p) => {
@@ -174,7 +174,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     sendResponse(req, res, blob);
 }));
 
-// GET /data/:streamName
+// GET /:streamName
 router.get("/:streamName", asyncHandler(async (req, res) => {
     const streamName = req.params.streamName;
     const since = req.query.since;
@@ -187,8 +187,8 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, stream.name);
-    const canonicalURL = createCollectionURL(DOMAIN, stream.name);
+    const collectionURL = createCollectionURL(DATA_DOMAIN, stream.name);
+    const canonicalURL = createCollectionURL(DATA_DOMAIN, stream.name);
     if (since) {
         canonicalURL.searchParams.append("since", since);
     }
@@ -244,7 +244,7 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     };
 
     if (!exhausted && lastTime) {
-        const nextPath = createCollectionURL(DOMAIN, stream.name);
+        const nextPath = createCollectionURL(DATA_DOMAIN, stream.name);
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
@@ -286,7 +286,7 @@ async function sendResponse(req, res, blob) {
 }
 
 function createCollectionURL(base: string, streamName: string): URL {
-    return new URL(`/data/${streamName}`, base);
+    return new URL(`/${streamName}`, base);
 }
 
 function createFragmentationURL(
@@ -294,7 +294,7 @@ function createFragmentationURL(
     streamName: string,
     fragmentationName: string,
 ): URL {
-    return new URL(`/data/${streamName}/${fragmentationName}`, base);
+    return new URL(`/${streamName}/${fragmentationName}`, base);
 }
 
 function createFragmentURL(
@@ -303,7 +303,7 @@ function createFragmentURL(
     fragmentationName: string,
     bucketValue: string,
 ): URL {
-    return new URL(`/data/${streamName}/${fragmentationName}/${bucketValue}`, base);
+    return new URL(`/${streamName}/${fragmentationName}/${bucketValue}`, base);
 }
 
 export default router;
