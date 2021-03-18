@@ -14,15 +14,15 @@ Because we offload a _lot_ of work to the database, we use [Scylla](https://www.
 
 You'll have to limit the amount of logical cores using `--smp`, e.g.:
 
-`docker run -p 9042:9042 --name some-scylla --hostname some-scylla -d scylladb/scylla --smp 4`
+`docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --smp 4`
 
 **Note 2**: By default, this container will consume all available memory. You can restrict its memory consumption during creation using `--memory`, e.g.:
 
-`docker run -p 9042:9042 --name some-scylla --hostname some-scylla -d scylladb/scylla --memory 8G`
+`docker run --name some-scylla --hostname some-scylla -d scylladb/scylla --memory 8G`
 
 Or if the container's already running:
 
-`docker update some-scylla --memory-swap 8G --memory 8G`
+`docker update update some-scylla --memory-swap 8G --memory 8G`
 
 
 ## Setting up the tables
@@ -139,13 +139,13 @@ CREATE TABLE proto.state (
 
 # API endpoints
 
-## `GET /`
+## `GET /streams`
 
 Request:
 
 ```bash
 curl -X GET \
-  http://localhost:3000/ \
+  http://localhost:3000/streams \
   -H 'cache-control: no-cache'
 ```
 
@@ -202,13 +202,13 @@ Response:
 ]
 ```
 
-## `POST /`
+## `POST /streams`
 
 Request:
 
 ```bash
 curl -X POST \
-  http://localhost:3000/ \
+  http://localhost:3000/streams \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d 'url=https%3A%2F%2Fstreams.datapiloten.be%2Fobservations&name=observations'
 ```
@@ -218,17 +218,17 @@ Response:
 ```json
 {
     "status": "success",
-    "url": "http://localhost:3000/observations"
+    "url": "/streams/observations"
 }
 ```
 
-## `GET /:streamName`
+## `GET /streams/:streamName`
 
 Request:
 
 ```
 curl -X GET \
-  http://localhost:3000/observations
+  http://localhost:3000/streams/observations
 ```
 
 Response:
@@ -283,13 +283,13 @@ Response:
 }
 ```
 
-## `GET /:streamName/fragmentations`
+## `GET /streams/:streamName/fragmentations`
 
 Request:
 
 ```bash
 curl -X GET \
-  http://localhost:3000/observations/fragmentations/
+  http://localhost:3000/streams/observations/fragmentations/
 ```
 
 Response:
@@ -312,13 +312,13 @@ Response:
 ]
 ```
 
-## `POST /:streamName/fragmentations`
+## `POST /streams/:streamName/fragmentations`
 
 Request:
 
 ```bash
 curl -X POST \
-  http://localhost:3000/observations/fragmentations \
+  http://localhost:3000/streams/observations/fragmentations \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d 'name=tiles&property=http%3A%2F%2Fwww.opengis.net%2Font%2Fgeosparql%23asWKT&strategy=XYZ_TILE&minZoom=13&maxZoom=15'
 ```
@@ -328,17 +328,17 @@ Response:
 ```json
 {
     "status": "success",
-    "url": "http://localhost:3000/observations/fragmentations/tiles"
+    "url": "/streams/observations/fragmentations/tiles"
 }
 ```
 
-## `GET /:streamName/fragmentations/:fragmentName`
+## `GET /streams/:streamName/fragmentations/:fragmentName`
 
 Request:
 
 ```bash
 curl -X GET \
-  http://localhost:3000/observations/fragmentations/tiles
+  http://localhost:3000/streams/observations/fragmentations/tiles
 ```
 
 Response:
@@ -359,13 +359,13 @@ Response:
 }
 ```
 
-## `POST /:streamName/fragmentations/:fragmentName/enable`
+## `POST /streams/:streamName/fragmentations/:fragmentName/enable`
 
 Request:
 
 ```bash
 curl -X POST \
-  http://localhost:3000/observations/fragmentations/tiles/enable \
+  http://localhost:3000/streams/observations/fragmentations/tiles/enable \
   -H 'content-type: application/x-www-form-urlencoded' \
   -d enabled=false
 ```

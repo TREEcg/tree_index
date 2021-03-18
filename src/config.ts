@@ -15,7 +15,7 @@ class Singleton {
     public static getCassandraClient() {
         if (!Singleton.cassandraClient) {
             Singleton.cassandraClient = new cassandra.Client({
-                contactPoints: ["localhost:9042"],
+                contactPoints: ["172.17.0.2:9042"],
                 localDataCenter: "datacenter1",
                 pooling: {
                     maxRequestsPerConnection: 4000,
