@@ -1,7 +1,7 @@
 import express = require("express");
 import asyncHandler = require("express-async-handler");
 import jsonld = require("jsonld");
-import { DOMAIN, EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
+import { DATA_ROOT, EVENT_STORAGE, FRAGMENT_STORAGE, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import RDFEvent from "../entities/Event";
 import EventStream from "../entities/EventStream";
@@ -23,8 +23,8 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, stream.name);
-    const canonicalURL = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+    const collectionURL = createCollectionURL(stream.name);
+    const canonicalURL = new URL(createFragmentURL(stream.name, fragmentationName, fragment));
     if (since) {
         canonicalURL.searchParams.append("since", since);
     }
@@ -89,7 +89,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
         relations.push({
             "@type": strategy.getRelationType(),
             "https://w3id.org/tree#node": {
-                "@id": createFragmentURL(DOMAIN, streamName, fragmentationName, frag.value),
+                "@id": createFragmentURL(streamName, fragmentationName, frag.value),
                 "https://w3id.org/tree#remainingItems": frag.count,
             },
             "https://w3id.org/tree#path": fragmentation.shaclPath.map((p) => {
@@ -103,7 +103,7 @@ router.get("/:streamName/:fragmentationName/:fragment", asyncHandler(async (req,
     }
 
     if (withNext && lastTime) {
-        const nextPath = createFragmentURL(DOMAIN, stream.name, fragmentationName, fragment);
+        const nextPath = createFragmentURL(stream.name, fragmentationName, fragment);
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
@@ -127,8 +127,8 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, streamName);
-    const canonicalURL = createFragmentationURL(DOMAIN, streamName, fragmentationName);
+    const collectionURL = createCollectionURL(streamName);
+    const canonicalURL = createFragmentationURL(streamName, fragmentationName);
     if (streamName !== canonicalStream?.name) {
         res.redirect(301, canonicalURL);
         return;
@@ -152,7 +152,7 @@ router.get("/:streamName/:fragmentationName", asyncHandler(async (req, res) => {
         relations.push({
             "@type": strategy.getRelationType(),
             "https://w3id.org/tree#node": {
-                "@id": createFragmentURL(DOMAIN, streamName, fragmentationName, frag.value),
+                "@id": createFragmentURL(streamName, fragmentationName, frag.value),
                 "https://w3id.org/tree#remainingItems": frag.count,
             },
             "https://w3id.org/tree#path": fragmentation.shaclPath.map((p) => {
@@ -187,8 +187,8 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     }
 
     const canonicalStream = await STREAM_STORAGE.getByID(stream.sourceURI);
-    const collectionURL = createCollectionURL(DOMAIN, stream.name);
-    const canonicalURL = createCollectionURL(DOMAIN, stream.name);
+    const collectionURL = createCollectionURL(stream.name);
+    const canonicalURL = new URL(createCollectionURL(stream.name));
     if (since) {
         canonicalURL.searchParams.append("since", since);
     }
@@ -244,14 +244,15 @@ router.get("/:streamName", asyncHandler(async (req, res) => {
     };
 
     if (!exhausted && lastTime) {
-        const nextPath = createCollectionURL(DOMAIN, stream.name);
+        const nextPath = createCollectionURL(stream.name);
         relations.push(buildNextRelation(stream, nextPath, lastTime));
     }
 
     sendResponse(req, res, blob);
 }));
 
-function buildNextRelation(stream: EventStream, nextURL: URL, time: Date) {
+function buildNextRelation(stream: EventStream, next: string, time: Date) {
+    const nextURL = new URL(next);
     nextURL.searchParams.append("since", time.toISOString());
     return {
         "@type": "https://w3id.org/tree#GreaterOrEqualThanRelation",
@@ -285,25 +286,23 @@ async function sendResponse(req, res, blob) {
     });
 }
 
-function createCollectionURL(base: string, streamName: string): URL {
-    return new URL(`/data/${streamName}`, base);
+function createCollectionURL(streamName: string): string {
+    return DATA_ROOT + `/${streamName}`;
 }
 
 function createFragmentationURL(
-    base: string,
     streamName: string,
     fragmentationName: string,
-): URL {
-    return new URL(`/data/${streamName}/${fragmentationName}`, base);
+): string {
+    return DATA_ROOT + `/${streamName}/${fragmentationName}`;
 }
 
 function createFragmentURL(
-    base: string,
     streamName: string,
     fragmentationName: string,
     bucketValue: string,
-): URL {
-    return new URL(`/data/${streamName}/${fragmentationName}/${bucketValue}`, base);
+): string {
+    return DATA_ROOT + `/${streamName}/${fragmentationName}/${bucketValue}`;
 }
 
 export default router;

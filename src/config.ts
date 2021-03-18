@@ -34,7 +34,9 @@ class Singleton {
     }
 }
 
-export const DOMAIN = "https://fast-and-slow.osoc.be";
+export const DATA_ROOT = "https://fast-and-slow.osoc.be/data";
+export const ADMIN_ROOT = "https://fast-and-slow.osoc.be/streams";
+
 export const LOGGER = logger;
 export const STREAM_STORAGE = new CassandraEventStreamStorage(Singleton.getCassandraClient());
 export const FRAGMENTATION_STORAGE = new CassandraFragmentationStorage(Singleton.getCassandraClient());

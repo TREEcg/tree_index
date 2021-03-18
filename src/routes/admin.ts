@@ -2,7 +2,7 @@ import express = require("express");
 import asyncHandler = require("express-async-handler");
 import path = require("path");
 import { Worker } from "worker_threads";
-import { FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
+import { ADMIN_ROOT, FRAGMENTATION_STORAGE, STREAM_STORAGE } from "../config";
 import EntityStatus from "../entities/EntityStatus";
 import EventStream from "../entities/EventStream";
 import Fragmentation from "../entities/Fragmentation";
@@ -61,7 +61,7 @@ router.post("/", asyncHandler(async (req, res) => {
         startIngester(stream.sourceURI);
     }
 
-    res.json({ status: "success", url: `/streams/${name}` });
+    res.json({ status: "success", url: ADMIN_ROOT + `/streams/${name}` });
 }));
 
 // GET /streams/:streamName
@@ -148,7 +148,7 @@ router.post("/:streamName/fragmentations", asyncHandler(async (req, res) => {
         },
     });
 
-    res.json({ status: "success", url: `/streams/${streamName}/fragmentations/${name}` });
+    res.json({ status: "success", url: ADMIN_ROOT + `/streams/${streamName}/fragmentations/${name}` });
 }));
 
 // GET /streams/:streamName/fragmentations/:fragmentName
